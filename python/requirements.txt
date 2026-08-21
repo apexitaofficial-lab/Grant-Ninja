@@ -1,0 +1,33 @@
+# Grant Ninja — AI data pipeline
+# Python 3.12+ (see .python-version)
+#
+# Pinned to minor versions: this runs unattended on a cron schedule, and an
+# unattended job that breaks after a silent transitive upgrade is worse than
+# one that stays on a known-good release.
+
+# --- Core -------------------------------------------------------------------
+pydantic>=2.11,<3.0            # Validates every AI response before it can reach the database
+pydantic-settings>=2.8,<3.0    # Typed settings from .env, validated at startup
+python-dotenv>=1.1,<2.0
+loguru>=0.7,<0.8               # Structured logging
+
+# --- Database ---------------------------------------------------------------
+supabase>=2.15,<3.0            # Uses the secret key; bypasses RLS by design
+postgrest>=1.0,<2.0
+
+# --- Crawling ---------------------------------------------------------------
+crawl4ai>=0.6,<0.8             # Default engine: JS rendering, markdown output, caching
+playwright>=1.51,<2.0          # Fallback for pages Crawl4AI cannot render
+httpx>=0.28,<1.0               # Final fallback for plain HTML and RSS
+beautifulsoup4>=4.13,<5.0
+lxml>=5.3,<6.0
+
+# --- AI ---------------------------------------------------------------------
+google-genai>=1.10,<2.0        # Gemini Flash
+
+# --- Matching ---------------------------------------------------------------
+rapidfuzz>=3.13,<4.0           # Near-duplicate detection before falling back to Gemini
+
+# --- Scheduling / retries ---------------------------------------------------
+tenacity>=9.0,<10.0            # Retry policy for network and AI calls
+croniter>=6.0,<7.0             # Reads crawler_sources.crawl_frequency to decide what is due

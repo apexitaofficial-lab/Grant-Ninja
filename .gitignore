@@ -1,0 +1,62 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# Next.js
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/next-env.d.ts
+.vercel
+
+# Environment — never commit real keys
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Claude Code local settings.
+#
+# `settings.local.json` is a per-machine permissions allowlist that records the
+# commands that have been approved — including their full text, which means any
+# secret ever passed inline on a command line ends up in it. It is personal to
+# one machine and must never be committed. `settings.json` is the shared
+# project config and is safe to track.
+.claude/settings.local.json
+
+# Python
+python/.venv/
+python/venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Crawler artefacts
+python/.crawl4ai/
+python/cache/
+python/output/
+
+# Testing
+coverage/
+.nyc_output/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# TypeScript
+*.tsbuildinfo
