@@ -35,6 +35,28 @@ const clientEnvSchema = z.object({
  */
 const serverEnvSchema = z.object({
   SUPABASE_SECRET_KEY: z.string().min(1, "SUPABASE_SECRET_KEY is required"),
+
+  /**
+   * Email (Resend). Optional on purpose.
+   *
+   * A contact message is saved to the database before any email is attempted,
+   * so email is a notification, not the record. Requiring these would stop the
+   * whole site booting over a feature that only makes an existing message
+   * arrive faster — and would block local development for anyone without a
+   * Resend account.
+   *
+   * With them unset, the form still works and the message is still stored; a
+   * warning is logged once per send instead.
+   */
+  RESEND_API_KEY: z.string().optional(),
+  /**
+   * Must be an address on a domain verified in Resend. Until a domain is
+   * verified, Resend only accepts `onboarding@resend.dev`, and only delivers
+   * to the account owner's own address.
+   */
+  RESEND_FROM_EMAIL: z.email().optional(),
+  /** Where contact form notifications are delivered. */
+  CONTACT_NOTIFICATION_EMAIL: z.email().optional(),
 });
 
 export type ClientEnv = z.infer<typeof clientEnvSchema>;
@@ -77,6 +99,9 @@ export function getServerEnv(): ServerEnv {
     serverEnvSchema,
     {
       SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY,
+      RESEND_API_KEY: process.env.RESEND_API_KEY,
+      RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
+      CONTACT_NOTIFICATION_EMAIL: process.env.CONTACT_NOTIFICATION_EMAIL,
     },
     "server",
   );

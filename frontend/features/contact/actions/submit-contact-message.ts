@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 
 import { contactRepository } from "@/features/contact/repositories/contact-repository";
 import { contactMessageSchema } from "@/features/contact/schemas/contact-schema";
+import { notifyContactMessage } from "@/features/contact/services/contact-notification";
 import type { ActionResult } from "@/lib/errors";
 import { failure, success, toActionFailure } from "@/lib/errors";
 import { logger } from "@/lib/logger";
@@ -72,6 +73,34 @@ export async function submitContactMessage(input: unknown): Promise<ActionResult
       feature: "contact",
       action: "submitContactMessage",
     });
+
+    // Stored first, notified second — and deliberately outside the failure
+    // path. The message is safe in the database by this point, so a provider
+    // outage must not tell the visitor their message failed and prompt them to
+    // send it again. The worst case is a delayed reply, not a lost enquiry.
+    const { acknowledgement, teamNotification } = await notifyContactMessage(parsed.data);
+
+    // Logged separately because they fail for different reasons and need
+    // different responses. A failed acknowledgement usually means the sender
+    // mistyped their address — the lead is fine, but nobody can reply to it. A
+    // failed team notification means a real lead is sitting unseen.
+    if (acknowledgement.status !== "sent") {
+      logger.warn("Sender was not acknowledged", {
+        feature: "contact",
+        action: "submitContactMessage",
+        status: acknowledgement.status,
+        reason: acknowledgement.reason,
+      });
+    }
+
+    if (teamNotification.status !== "sent") {
+      logger.error("Enquiry stored but the team was not notified", undefined, {
+        feature: "contact",
+        action: "submitContactMessage",
+        status: teamNotification.status,
+        reason: teamNotification.reason,
+      });
+    }
 
     return success(null);
   } catch (error) {

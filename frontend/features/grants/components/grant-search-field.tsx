@@ -1,11 +1,11 @@
 "use client";
 
 import { Search, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useQueryParams } from "@/features/grants/hooks/use-query-params";
+import { useDebouncedSearch } from "@/features/shared/hooks/use-debounced-search";
 import { cn } from "@/lib/utils";
 
 interface GrantSearchFieldProps {
@@ -15,43 +15,26 @@ interface GrantSearchFieldProps {
   readonly className?: string;
 }
 
-/** Long enough to avoid a query on every keystroke, short enough to feel live. */
-const DEBOUNCE_MS = 350;
-
 /**
  * Keyword search over titles, summaries and eligibility text.
  *
  * The term lives in the URL, so a search is shareable, indexable and survives
  * a refresh. Typing rewrites the URL after a pause rather than on submit —
  * the form still submits on Enter for anyone who expects that.
+ *
+ * The debounce itself lives in `useDebouncedSearch`, shared with the admin
+ * listings so every search in the product behaves the same way.
  */
 export function GrantSearchField({
   initialValue,
   currentQuery = "",
   className,
 }: GrantSearchFieldProps) {
-  const { setValue: setParam, isPending } = useQueryParams(currentQuery);
-  const [value, setValue] = useState(initialValue);
+  const { value, setValue, commit, clear, isPending } = useDebouncedSearch(
+    currentQuery,
+    initialValue,
+  );
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // The URL is the source of truth: a back navigation must win over local state.
-  useEffect(() => {
-    setValue(initialValue);
-  }, [initialValue]);
-
-  function commit(next: string) {
-    setParam("q", next.trim());
-  }
-
-  useEffect(() => {
-    if (value === initialValue) {
-      return;
-    }
-
-    const timer = setTimeout(() => setParam("q", value.trim()), DEBOUNCE_MS);
-
-    return () => clearTimeout(timer);
-  }, [value, initialValue, setParam]);
 
   return (
     <form
@@ -90,8 +73,7 @@ export function GrantSearchField({
           aria-label="Clear search"
           className="absolute top-1/2 right-2 size-8 -translate-y-1/2"
           onClick={() => {
-            setValue("");
-            commit("");
+            clear();
             inputRef.current?.focus();
           }}
         >

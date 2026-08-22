@@ -76,8 +76,20 @@ export interface GrantPatch {
   readonly featured?: boolean;
 }
 
+/**
+ * Extra views the dashboard links into.
+ *
+ * `unverified` and `closing` are not statuses — they are questions asked of
+ * published grants. The dashboard counts them, so the list has to be able to
+ * show the same set, or those counters are numbers with nowhere to go.
+ */
+export type AdminGrantView = "unverified" | "closing";
+
+export const CLOSING_SOON_DAYS = 14;
+
 export interface AdminGrantQuery {
   readonly status?: GrantStatus;
+  readonly view?: AdminGrantView;
   readonly search?: string;
   readonly page?: number;
   readonly perPage?: number;
@@ -148,6 +160,24 @@ export class GrantAdminRepository extends BaseRepository {
 
     if (query.status !== undefined) {
       builder = builder.eq("status", query.status);
+    }
+
+    // Both views only make sense for published grants — an unverified draft is
+    // not a problem, and a draft closing next week is not urgent. The
+    // definitions match `admin-stats-repository` exactly, so the count on the
+    // dashboard and the rows on this page can never disagree.
+    if (query.view === "unverified") {
+      builder = builder.eq("status", "published").is("last_verified_at", null);
+    }
+
+    if (query.view === "closing") {
+      const now = new Date();
+      const soon = new Date(now.getTime() + CLOSING_SOON_DAYS * 86_400_000);
+
+      builder = builder
+        .eq("status", "published")
+        .gte("closes_at", now.toISOString())
+        .lte("closes_at", soon.toISOString());
     }
 
     if (query.search !== undefined && query.search.trim() !== "") {

@@ -15,5 +15,8 @@ declare namespace NodeJS {
     readonly NEXT_PUBLIC_SITE_URL?: string;
     readonly NEXT_PUBLIC_SITE_NAME?: string;
     readonly SUPABASE_SECRET_KEY?: string;
+    readonly RESEND_API_KEY?: string;
+    readonly RESEND_FROM_EMAIL?: string;
+    readonly CONTACT_NOTIFICATION_EMAIL?: string;
   }
 }

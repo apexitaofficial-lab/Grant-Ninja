@@ -71,6 +71,7 @@ export const routes = {
     agencies: "/admin/agencies",
     crawler: "/admin/crawler",
     duplicates: "/admin/duplicates",
+    messages: "/admin/messages",
     settings: "/admin/settings",
     login: "/admin/login",
   },

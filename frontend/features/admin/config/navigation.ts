@@ -41,6 +41,7 @@ export const adminNavigation: readonly AdminNavSection[] = [
     items: [
       { label: "Crawler", href: routes.admin.crawler, minimumRole: "viewer" },
       { label: "Duplicates", href: routes.admin.duplicates, minimumRole: "editor" },
+      { label: "Messages", href: routes.admin.messages, minimumRole: "editor" },
       { label: "Settings", href: routes.admin.settings, minimumRole: "admin" },
     ],
   },
