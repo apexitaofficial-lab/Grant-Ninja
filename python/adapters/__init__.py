@@ -4,6 +4,6 @@ Importing this package registers every adapter. `adapters.base.get_adapter`
 relies on that, so a new adapter becomes available by adding one import here.
 """
 
-from adapters import grants_gov  # noqa: F401 — imported for registration
+from adapters import generic, grants_gov  # noqa: F401 — imported for registration
 
-__all__ = ["grants_gov"]
+__all__ = ["generic", "grants_gov"]

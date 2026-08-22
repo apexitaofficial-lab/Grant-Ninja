@@ -59,6 +59,8 @@ class GrantNormalizer:
         default_country_slug: str,
         status: GrantStatus,
         category_names: list[str] | None = None,
+        state_id: str | None = None,
+        fallback_organization_id: str | None = None,
     ) -> NormalizationResult:
         problems: list[str] = []
 
@@ -76,9 +78,28 @@ class GrantNormalizer:
         if grant.organization:
             organization = self._reference.match_organization(grant.organization, country["id"])
 
+        if organization is None and fallback_organization_id is not None:
+            # A state portal names its own departments — "Department of Water
+            # Resources", "Wildlife Conservation Board" — and none of them are
+            # in a table built from the federal register. Attributing the grant
+            # to the state government that publishes the portal is true, and
+            # far better than discarding a correct extraction because the
+            # department is not catalogued yet.
+            #
+            # Note what this is not: it does not create the department from a
+            # name a model read off a page. The fallback is an organisation
+            # someone configured on the source, so nothing is invented.
+            organization = self._reference.find_organization_by_id(fallback_organization_id)
+
+            if organization is not None:
+                problems.append(
+                    f"agency {grant.organization!r} not catalogued, attributed to "
+                    f"{organization['name']!r}"
+                )
+
         if organization is None:
-            # Creating an agency from a hallucinated name would pollute the
-            # directory permanently, so this stops here instead.
+            # No match and no fallback. Creating an agency from a hallucinated
+            # name would pollute the directory permanently, so this stops here.
             problems.append(f"agency {grant.organization!r} not matched to a known organization")
 
             return NormalizationResult(None, problems)
@@ -118,7 +139,11 @@ class GrantNormalizer:
             eligibility=grant.eligibility,
             organization_id=organization["id"],
             country_id=country["id"],
-            state_id=None,
+            # Comes from the source, not the page. A state portal publishes
+            # its own state's grants, and the notice text rarely says which
+            # state it belongs to — it does not need to, because everyone
+            # reading it on that site already knows.
+            state_id=state_id,
             category_ids=category_ids,
             primary_category_id=primary_category_id,
             funding_amount=_stated_amount(grant.funding_amount),
@@ -132,7 +157,11 @@ class GrantNormalizer:
             source_url=source_url,
             opens_at=_to_datetime(grant.opens_at),
             closes_at=_to_datetime(grant.closes_at),
-            is_federal=_looks_federal(organization["name"]),
+            # A grant found on a state portal is state funding, whatever the
+            # department is called. Reading "federal" out of a name like
+            # "Department of Water Resources" would mislabel every state grant
+            # whose department happens to share a word with a federal one.
+            is_federal=state_id is None and _looks_federal(organization["name"]),
             is_private=False,
             content_hash=content_hash,
             ai_confidence=grant.confidence,

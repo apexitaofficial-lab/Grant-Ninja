@@ -119,14 +119,24 @@ class ReferenceRepository(BaseRepository):
 
     def list_countries(self) -> list[dict[str, str]]:
         try:
-            response = self._table("countries").select("id, name, slug, iso_code, currency").execute()
+            response = (
+                self._table("countries")
+                .select("id, name, slug, iso_code, iso_code_3, currency")
+                .execute()
+            )
         except APIError as error:
             raise self._fail("list_countries", error) from error
 
         return response.data
 
     def find_country(self, name_or_slug: str) -> dict[str, str] | None:
-        """Matches on slug, name or ISO code — Gemini may return any of them."""
+        """Matches on slug, name or either ISO code — a model may return any.
+
+        `iso_code_3` is here because it was missing: a California notice made
+        the model answer "USA", which matched nothing, and the grant fell back
+        to the default country with a warning. Right answer by luck, from a
+        lookup that had failed.
+        """
         needle = name_or_slug.strip().lower()
 
         for country in self.list_countries():
@@ -134,6 +144,7 @@ class ReferenceRepository(BaseRepository):
                 country["slug"].lower(),
                 country["name"].lower(),
                 (country.get("iso_code") or "").lower(),
+                (country.get("iso_code_3") or "").lower(),
             }:
                 return country
 
@@ -180,6 +191,21 @@ class ReferenceRepository(BaseRepository):
         self.log.debug("No confident agency match for {name!r}", name=name)
 
         return None
+
+    def find_organization_by_id(self, organization_id: str) -> dict[str, str] | None:
+        try:
+            rows = (
+                self._table("organizations")
+                .select("id, name, slug, country_id")
+                .eq("id", organization_id)
+                .limit(1)
+                .execute()
+                .data
+            )
+        except APIError as error:
+            raise self._fail("find_organization_by_id", error) from error
+
+        return self._first(rows)
 
     def upsert_organization(self, row: dict[str, str]) -> bool:
         """Adds an agency if its slug is not already taken.
