@@ -83,11 +83,11 @@ export default async function CountryPage({ params, searchParams }: CountryPageP
 
   const identity = await getSiteIdentity();
 
-  // Only states that actually have something. Fifty-two buttons, fifty-one of
-  // them reading zero, is a wall of dead ends that makes the page look broken
-  // rather than early — and it buries the one state that does have grants.
-  const statesWithGrants = states.filter((state) => state.grantCount > 0);
-  const emptyStateCount = states.length - statesWithGrants.length;
+  // Every state is listed, including the ones with nothing yet: each is a real
+  // page, and a visitor looking for Texas should find Texas rather than be
+  // told it does not exist. The count on each is the honest signal about
+  // what is there.
+  const statesWithGrants = states.filter((state) => state.grantCount > 0).length;
 
   return (
     <>
@@ -178,20 +178,32 @@ export default async function CountryPage({ params, searchParams }: CountryPageP
           </section>
         )}
 
-        {/* Only states that have something to show. See the comment where
-            `statesWithGrants` is built. */}
-        {statesWithGrants.length > 0 && (
+        {states.length > 0 && (
           <section aria-labelledby="states" className="mb-12">
-            <h2
-              id="states"
-              className="border-b border-border pb-2 font-mono text-xs tracking-widest text-muted-foreground uppercase"
-            >
-              Browse by state
-            </h2>
+            <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border pb-2">
+              <h2
+                id="states"
+                className="font-mono text-xs tracking-widest text-muted-foreground uppercase"
+              >
+                Browse by state
+              </h2>
+              <p className="font-mono text-xs text-muted-foreground tabular-nums">
+                {statesWithGrants} of {states.length} with grants
+              </p>
+            </div>
             <ul className="mt-4 flex flex-wrap gap-2">
-              {statesWithGrants.map((state) => (
+              {states.map((state) => (
                 <li key={state.slug}>
-                  <Button asChild variant="outline" size="sm">
+                  {/* States with nothing yet are dimmed rather than removed.
+                      They are real pages worth reaching, and the count is the
+                      honest signal — a full-strength button reading zero would
+                      promise something the page cannot deliver. */}
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className={state.grantCount === 0 ? "opacity-55" : undefined}
+                  >
                     <Link href={routes.state(country.slug, state.slug)}>
                       {state.name}
                       <span className="ml-1 font-mono text-xs text-muted-foreground tabular-nums">
@@ -202,13 +214,6 @@ export default async function CountryPage({ params, searchParams }: CountryPageP
                 </li>
               ))}
             </ul>
-            {emptyStateCount > 0 && (
-              <p className="mt-3 text-xs text-muted-foreground">
-                {emptyStateCount} further {emptyStateCount === 1 ? "state has" : "states have"} no
-                published grants yet. Their programmes are added as each state&rsquo;s portal is
-                connected.
-              </p>
-            )}
           </section>
         )}
 
