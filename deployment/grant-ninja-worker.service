@@ -1,0 +1,72 @@
+# Grant Ninja crawl worker.
+#
+# Install:
+#   sudo cp deployment/grant-ninja-worker.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now grant-ninja-worker
+#
+# Watch it:
+#   systemctl status grant-ninja-worker
+#   journalctl -u grant-ninja-worker -f
+#
+# This is the only long-running process on the server. It serves no HTTP and
+# listens on no port — it makes outbound calls to Supabase, Gemini and the
+# government sites it crawls, and nothing connects to it. That means no nginx,
+# no TLS certificate and no firewall exception are needed for it.
+
+[Unit]
+Description=Grant Ninja crawl worker
+Documentation=https://github.com/apexitaofficial-lab/Grant-Ninja
+# Crawling needs DNS and outbound HTTPS; starting before the network is up
+# produces a confusing burst of resolution failures on every boot.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=grantninja
+Group=grantninja
+WorkingDirectory=/srv/grant-ninja/python
+
+# Settings are validated at import, so a missing key stops the service here
+# with a readable message rather than surfacing as an auth error mid-crawl.
+EnvironmentFile=/srv/grant-ninja/python/.env
+
+# Unbuffered, or journalctl shows nothing until a buffer happens to flush and
+# the logs appear minutes after the event they describe.
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/srv/grant-ninja/python/.venv/bin/python -m app.worker
+
+# A crawl in flight holds an open run row. SIGTERM asks the worker to finish
+# the page it is on and close that row; killing it outright leaves the row in
+# `running`, and the one-job-per-source rule then blocks that source until the
+# stall reaper clears it an hour later.
+KillSignal=SIGTERM
+TimeoutStopSec=300
+
+Restart=always
+RestartSec=15
+# If it dies five times in five minutes something is genuinely wrong and
+# restarting faster only fills the disk with logs.
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+# --- Containment ---------------------------------------------------------
+# The worker reads government websites, so it processes untrusted input all
+# day. These limit what a bad day can reach.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+# Playwright writes browser profiles and Loguru writes rotating log files.
+ReadWritePaths=/srv/grant-ninja/python/logs /srv/grant-ninja/python/.crawl4ai
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+# Chromium is memory-hungry and a runaway page should not take the box with it.
+MemoryMax=2G
+
+[Install]
+WantedBy=multi-user.target

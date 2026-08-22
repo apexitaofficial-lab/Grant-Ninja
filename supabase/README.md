@@ -5,10 +5,26 @@ pipeline. Design rationale lives in [`docs/DATABASE_ARCHITECTURE.md`](../docs/DA
 
 ## Applying the migrations
 
-The project ref is `irgrblwctfsfiwlxxwby`, already linked. All 15 migrations
+The project ref is `irgrblwctfsfiwlxxwby`, already linked. All 25 migrations
 are applied.
 
 ```bash
+npx supabase db push
+```
+
+**Run this before deploying code that depends on it.** Migrations are shared by
+the Vercel frontend and the Python worker — several add database functions the
+admin panel calls directly. Shipping that code before the function exists turns
+every use of it into a runtime error, while a function nothing calls yet is
+harmless. Order is always: migrate, then deploy.
+
+The CLI reads its credentials from the environment. Pass them per-invocation
+rather than typing them inline, or the full command — token included — is
+recorded in shell history and in tool permission files:
+
+```bash
+export SUPABASE_ACCESS_TOKEN=...   # from Account -> Access Tokens
+export SUPABASE_DB_PASSWORD=...    # Project Settings -> Database
 npx supabase db push
 ```
 

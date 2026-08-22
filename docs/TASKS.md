@@ -720,6 +720,42 @@ carried by the visible key-facts table and the answer capsules instead.
 
 ## Phase 7 — Deployment
 
-- [ ] Nginx config, PM2 config, cron examples
-- [ ] Environment documentation
-- [ ] Hostinger VPS notes
+- [x] **`deployment/README.md`** — the runbook for both halves plus the hosted
+      database, with the ordering rule stated up front: migrate, then deploy the
+      frontend, then the worker. That order is not style. Migration `0022` added
+      functions the admin panel calls; shipping that code first turns every use
+      of it into a runtime error, while a function nothing calls yet is
+      harmless.
+- [x] **No Nginx, no PM2, no cron — and no ports open on the server.** The spec
+      assumed the whole app on one VPS. With the frontend on Vercel, the Python
+      side is a *worker*: it serves no HTTP, so it needs no reverse proxy, no
+      TLS certificate and no firewall exception. It makes outbound calls only.
+      This is the Postgres-as-queue decision paying off — the two halves never
+      talk to each other, they meet in the database.
+- [x] `deployment/grant-ninja-worker.service` — systemd unit with a 300-second
+      stop timeout, because a crawl in flight holds an open run row and killing
+      it outright leaves that source blocked until the stall reaper clears it an
+      hour later. Plus containment (`ProtectSystem=strict`, `NoNewPrivileges`,
+      a 2GB cap on Chromium) since the worker reads untrusted government pages
+      all day.
+- [x] `deployment/deploy-worker.sh` — pulls, installs, refreshes Chromium, then
+      runs the health check **while the old worker is still up** and only
+      restarts if it passes. A bad config fails before the crawler goes down
+      rather than after.
+- [x] `frontend/next.config.ts` — was the empty scaffold. Now sets
+      `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` and
+      `Permissions-Policy`, drops `X-Powered-By`, and allows Supabase storage as
+      an image host. Verified against the running server. A full CSP is
+      deliberately *not* set: Next.js injects inline scripts for hydration, so
+      it needs nonces threaded through the document and page-by-page testing —
+      shipping a broken one silently breaks the site.
+- [x] **`GEMINI_API_KEY` removed from the frontend.** It was validated at import
+      but never used — every AI call is in Python. The Vercel build would have
+      failed until an AI key was pasted in that nothing there calls, putting a
+      second copy of a credential on a second platform for nothing.
+- [x] `frontend/.env.example` was being ignored by Next.js's default `.env*`
+      rule, so only Python's template was tracked. It is the sole record of
+      what Vercel needs; without it whoever deploys is guessing.
+- [ ] Custom domain and DNS
+- [ ] A staging environment, if wanted — a second Supabase project and a Vercel
+      preview branch, so migrations can be rehearsed against real data shapes
