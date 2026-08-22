@@ -61,6 +61,7 @@ class GrantNormalizer:
         category_names: list[str] | None = None,
         state_id: str | None = None,
         fallback_organization_id: str | None = None,
+        is_federal: bool | None = None,
     ) -> NormalizationResult:
         problems: list[str] = []
 
@@ -161,7 +162,17 @@ class GrantNormalizer:
             # department is called. Reading "federal" out of a name like
             # "Department of Water Resources" would mislabel every state grant
             # whose department happens to share a word with a federal one.
-            is_federal=state_id is None and _looks_federal(organization["name"]),
+            # Told, not guessed. The source knows: everything on grants.gov is
+            # federal by definition, everything on a state portal is not.
+            # Deriving it from the agency *name* got 13 of 29 grants wrong —
+            # "Office for Victims of Crime", "Bureau of African Affairs" and
+            # even "Environmental Protection Agency" contain none of the words
+            # a name-matcher looks for, so every one was filed as state
+            # funding. `_looks_federal` remains only as a fallback for callers
+            # that cannot say.
+            is_federal=is_federal
+            if is_federal is not None
+            else (state_id is None and _looks_federal(organization["name"])),
             is_private=False,
             content_hash=content_hash,
             ai_confidence=grant.confidence,

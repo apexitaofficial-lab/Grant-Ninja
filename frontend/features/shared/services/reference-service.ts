@@ -21,6 +21,8 @@ export const ORGANIZATION_TYPE_LABELS: Readonly<Record<OrganizationType, string>
 export const listCountries = () => referenceRepository.listCountries();
 export const getCountry = (slug: string) => referenceRepository.findCountry(slug);
 export const listStates = (countrySlug: string) => referenceRepository.listStates(countrySlug);
+export const getFundingBreakdown = (countryId: string) =>
+  referenceRepository.getFundingBreakdown(countryId);
 export const getState = (countrySlug: string, stateSlug: string) =>
   referenceRepository.findState(countrySlug, stateSlug);
 
