@@ -18,10 +18,14 @@ from postgrest.exceptions import APIError
 
 from repositories.base import BaseRepository
 
+# Explicit rather than `*` so a new column is a deliberate addition. The cost
+# is that forgetting one is silent — `config` was added and omitted here, and
+# the generic adapter reported "strategy must be sitemap or listing, got ''"
+# rather than anything pointing at the query.
 SOURCE_FIELDS = (
-    "id, country_id, organization_id, name, base_url, adapter_key, "
+    "id, country_id, state_id, organization_id, name, base_url, adapter_key, "
     "crawl_frequency, priority, status, request_delay_ms, max_concurrency, "
-    "respect_robots_txt, last_run_at"
+    "respect_robots_txt, last_run_at, config"
 )
 
 

@@ -46,6 +46,11 @@ log = get_logger("pipeline")
 DEFAULT_PAGE_LIMIT = 25
 
 
+def _optional_str(value: object) -> str | None:
+    """A UUID column that may be null. PostgREST returns None, not ''."""
+    return str(value) if isinstance(value, str) and value != "" else None
+
+
 @dataclass
 class RunTally:
     """What a run did. Mirrors the columns on `crawler_runs`."""
@@ -210,6 +215,15 @@ class CrawlPipeline:
             content_hash=result.content_hash or "",
             default_country_slug=self._country_slug(source),
             status=requested_status,
+            # A state portal's grants belong to that state. Without this the
+            # `crawler_sources.state_id` column would be configuration nothing
+            # reads, and every state grant would sit under the country only —
+            # invisible to the state pages built to list them.
+            state_id=_optional_str(source.get("state_id")),
+            # `crawler_sources.organization_id` is the source's own body — the
+            # state government for a state portal. Used only when the specific
+            # department cannot be matched.
+            fallback_organization_id=_optional_str(source.get("organization_id")),
         )
 
         if normalized.grant is None:

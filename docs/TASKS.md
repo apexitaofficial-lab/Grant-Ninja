@@ -480,6 +480,50 @@ Bugs found and fixed while building this slice:
       to update it, and the symptom would be an operator activating a source
       that can only fail. Written every tick rather than at startup so removing
       an adapter is reflected too.
+- [x] **All 50 states seeded** (migration `0026`), plus DC and Puerto Rico —
+      they run their own programmes and applicants search for them by name.
+- [x] **`adapters/generic.py`** — a source that needs no code of its own.
+      Sitemap or listing strategy, driven by `crawler_sources.config`, so
+      adding a state is filling in a form rather than shipping Python. Fifty
+      bespoke adapters would be fifty modules to keep working.
+- [x] A source without a URL pattern is **refused**, not allowed to run.
+      Without one it would treat every page on the site as a grant and crawl a
+      government archive of press releases at someone else's expense.
+- [x] **California Grants Portal connected and proven** — 2,120 sitemap URLs,
+      1,991 of them individual grant pages, discovered with zero
+      California-specific code. Page content is well structured (`Purpose:` /
+      `Description:`, with amounts, dates and eligibility all present).
+- [x] `crawler_sources` gained `config` and `state_id`; grants from a state
+      portal are now attributed to that state. Without the wiring the column
+      would be configuration nothing read, and every state grant would sit
+      under the country only — invisible to the state pages built to list them.
+- [x] **Uncatalogued state departments fall back to the state government.**
+      "Wildlife Conservation Board" and "Department of Water Resources" are real
+      California agencies absent from a table built out of the federal register,
+      and the normalizer was correctly refusing to invent them — which would
+      have discarded most state grants. The fallback is an organisation
+      configured on the source, so nothing is created from a name a model read
+      off a page, and the substitution is recorded rather than silent.
+- [x] State grants are never marked federal. `_looks_federal` reads words out of
+      an agency name, and "Department of Water Resources" would have mislabelled
+      California funding as federal.
+- [x] Country matching now accepts `iso_code_3`. A California notice made the
+      model answer "USA", which matched nothing and fell through to the default
+      — the right answer by luck, from a lookup that had failed.
+- [x] `SOURCE_FIELDS` lists columns explicitly, and adding `config` without
+      adding it there made the adapter report "strategy must be sitemap or
+      listing, got ''" — a message pointing nowhere near the query. Both new
+      columns are now selected.
+- [x] 108 Python tests (10 new for state attribution and adapter guards)
+- [ ] **Reality check on "50 states": most state portals cannot be crawled.**
+      Probed 15; only **California** proved usable. Three return 403 to any bot,
+      five disallow crawling in robots.txt, three resolved to nothing, one 404s,
+      and New York and North Carolina publish administration forms and general
+      state pages rather than grant listings. The generic adapter is necessary
+      but not sufficient — the remaining work per state is finding a source that
+      exists and permits crawling, which is research rather than code.
+- [ ] One organisation per state, as California now has, for each state brought
+      online
 - [ ] Monitoring beyond the run table (alerting on repeated failures)
 - [x] **Category coverage — resolved with an "Others" fallback** (owner's
       decision). Every crawled grant was being held as a draft because none of
