@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useQueryParams } from "@/features/grants/hooks/use-query-params";
 import {
   FILTER_PARAM_KEYS,
   FUNDING_SOURCE_LABELS,
@@ -17,6 +16,7 @@ import type {
   GrantFundingSource,
   GrantWindowFilter,
 } from "@/features/grants/types/grant";
+import { useQueryParams } from "@/features/shared/hooks/use-query-params";
 import { cn } from "@/lib/utils";
 
 export interface FilterCategoryOption {

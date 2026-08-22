@@ -57,6 +57,21 @@ There is no Gemini key here. Every AI call happens in the Python worker, which
 holds its own. A copy on the web host would be a second place to leak it from,
 protecting nothing.
 
+**Email (Resend)** — all three optional. Without them the contact form still
+stores every message; it just emails nobody about it.
+
+| Variable | Example | Notes |
+| -------- | ------- | ----- |
+| `RESEND_API_KEY` | `re_…` | resend.com → API Keys. Server only |
+| `RESEND_FROM_EMAIL` | `hello@grantninja.com` | Must be on a domain verified in Resend — see below |
+| `CONTACT_NOTIFICATION_EMAIL` | `dev@apexita.com` | Where submissions are delivered |
+
+Resend will not send from an address on an unverified domain. Until
+`grantninja.com` is added under Resend → Domains and its DNS records are in
+place, the only accepted sender is `onboarding@resend.dev`, and it delivers
+only to the Resend account owner's own address. That is fine for testing and
+useless in production, so verify the domain before launch.
+
 `frontend/config/env.ts` validates all of these at startup, so a missing one
 fails the build with a readable message rather than at runtime with a null.
 
@@ -72,8 +87,42 @@ sudo adduser --system --group --home /srv/grant-ninja grantninja
 
 sudo apt update
 sudo apt install -y python3.12 python3.12-venv git
+```
 
-sudo -u grantninja git clone https://github.com/apexitaofficial-lab/Grant-Ninja.git /srv/grant-ninja
+### Clone only the Python half
+
+One repository does not mean one checkout. A **sparse checkout** puts `python/`
+and `deployment/` on this machine and leaves the frontend in the repository
+where it belongs — the server never renders a page, so shipping React source to
+it only widens what an intruder can read and what an audit has to cover.
+
+`--filter=blob:none` is the part that matters: with it, git never even
+downloads the contents of files outside the checkout, rather than downloading
+them and hiding them.
+
+```bash
+sudo -u grantninja git clone --filter=blob:none --no-checkout \
+  https://github.com/apexitaofficial-lab/Grant-Ninja.git /srv/grant-ninja
+
+cd /srv/grant-ninja
+sudo -u grantninja git sparse-checkout init --cone
+sudo -u grantninja git sparse-checkout set python deployment
+sudo -u grantninja git checkout main
+```
+
+`deployment/` is included because `deploy-worker.sh` lives there.
+
+`git pull` then behaves exactly as normal — it just keeps honouring the sparse
+rules, so updates to the frontend cost nothing here. Confirm what landed:
+
+```bash
+ls /srv/grant-ninja        # expect: python  deployment
+```
+
+`python/` is self-contained — settings, `.env` and `logs/` all resolve inside
+it — so nothing needs the rest of the tree.
+
+```bash
 cd /srv/grant-ninja/python
 
 sudo -u grantninja python3.12 -m venv .venv

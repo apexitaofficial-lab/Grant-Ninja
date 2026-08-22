@@ -16,6 +16,15 @@ frontend/next-env.d.ts
 .env.*.local
 !.env.example
 
+# Supabase CLI scratch state.
+#
+# `.temp` caches the linked project, the pooler URL and version checks for one
+# machine. It holds no secrets, but it is per-developer state that churns on
+# every CLI invocation — committing it means a diff every time anyone runs a
+# command. Supabase's own template excludes it.
+supabase/.temp/
+supabase/.branches/
+
 # Claude Code local settings.
 #
 # `settings.local.json` is a per-machine permissions allowlist that records the
@@ -28,6 +37,15 @@ frontend/next-env.d.ts
 # Python
 python/.venv/
 python/venv/
+# A typo'd virtualenv (`vevn`) slipped past the two rules above and committed
+# Windows executables — useless on the Ubuntu server they get cloned to.
+python/vevn/
+python/env/
+# Nothing in this project legitimately ships a Windows binary, so this catches
+# the next mistyped environment directory rather than waiting for someone to
+# notice it.
+*.exe
+*.dll
 __pycache__/
 *.py[cod]
 *.egg-info/

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { AdminSearchField } from "@/features/admin/components/admin-search-field";
 import { AgencyRows } from "@/features/admin/components/agency-rows";
 import { referenceAdminRepository } from "@/features/admin/repositories/reference-admin-repository";
 import { requireAdmin } from "@/features/admin/services/auth-service";
@@ -26,6 +27,15 @@ export default async function AdminAgenciesPage({
     perPage: PER_PAGE,
   });
 
+  // The search field rewrites the query string rather than replacing it, so
+  // the current one is handed to it — that is what keeps other parameters
+  // alive when someone types.
+  const currentQuery = new URLSearchParams(
+    Object.entries(params).flatMap(([key, value]) =>
+      typeof value === "string" ? [[key, value] as [string, string]] : [],
+    ),
+  ).toString();
+
   const lastPage = Math.max(1, Math.ceil(total / PER_PAGE));
   const query = (target: number): string => {
     const parts = [`page=${target}`];
@@ -48,30 +58,12 @@ export default async function AdminAgenciesPage({
         </p>
       </div>
 
-      <form action="/admin/agencies" className="flex flex-wrap gap-2">
-        <input
-          type="search"
-          name="q"
-          defaultValue={search ?? ""}
-          placeholder="Search agencies"
-          aria-label="Search agencies"
-          className="h-9 w-64 rounded-md border border-input bg-transparent px-3 text-sm"
-        />
-        <button
-          type="submit"
-          className="h-9 rounded-md border border-input px-3 text-sm hover:bg-muted"
-        >
-          Search
-        </button>
-        {search !== undefined && search !== "" && (
-          <Link
-            href="/admin/agencies"
-            className="flex h-9 items-center px-2 text-xs text-muted-foreground underline-offset-4 hover:underline"
-          >
-            Clear
-          </Link>
-        )}
-      </form>
+      <AdminSearchField
+        label="Search agencies"
+        placeholder="Search agencies"
+        initialValue={search ?? ""}
+        currentQuery={currentQuery}
+      />
 
       {items.length === 0 ? (
         <div className="rounded-card border border-dashed border-border bg-muted/30 px-6 py-12 text-center">

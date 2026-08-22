@@ -7,8 +7,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useQueryParams } from "@/features/grants/hooks/use-query-params";
 import type { GrantSort } from "@/features/grants/types/grant";
+import { useQueryParams } from "@/features/shared/hooks/use-query-params";
 
 interface GrantSortSelectProps {
   readonly value: GrantSort;

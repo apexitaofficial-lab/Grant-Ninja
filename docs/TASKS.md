@@ -575,6 +575,31 @@ Bugs found by running the pipeline against the live site, all fixed:
       `admin updated` / `admin published` / `crawler created` in order. Then
       repeated through the UI itself: the Publish button recorded the reviewer's
       note verbatim against `performed_by_type = admin`.
+- [x] **Debounced search everywhere** — `features/shared/hooks/use-debounced-search.ts`
+      at 350ms. The public grants search already had this inline; the logic is
+      now shared so all three searches behave identically rather than one being
+      the good one. Below ~200ms a debounce stops paying for itself, past ~500ms
+      it reads as lag.
+- [x] Admin agencies: replaced a form-and-Submit-button with live search.
+      Typing a name and then having to find and click "Search" is the slow half
+      of the interaction and the half people forget, leaving them looking at an
+      unfiltered list wondering why nothing happened.
+- [x] **Admin grants had no search box at all.** The repository and the page
+      both supported a `q` term and nothing rendered an input for it, so the
+      capability was unreachable. Added.
+- [x] The status tabs on the admin grants list dropped the search term — the
+      same class of bug as the pagination one fixed in Phase 3. Clicking a tab
+      silently widened the list back to everything, which reads as the filter
+      breaking rather than as a deliberate reset. They now carry `q` through.
+- [x] `use-query-params` moved from `features/grants/hooks/` to
+      `features/shared/hooks/` — it is generic listing-state logic and now has
+      callers in two features.
+- [x] **Measured, not assumed.** Typing 13 characters into the public search
+      produced **1** navigation; 11 characters into the admin grants search
+      produced **1** server round-trip, with `status=all` preserved alongside
+      the new term. Counting `history.pushState` proved unreliable for this —
+      the App Router does not always route through it, and an early reading of
+      "0 navigations" was measurement error rather than a broken debounce.
 - [ ] Bulk actions on the review queue (approve several at once)
 - [x] **Countries, Categories and Agencies** (`/admin/countries`,
       `/admin/categories`, `/admin/agencies`) — expandable rows rather than
@@ -681,6 +706,71 @@ Bugs found by running the pipeline against the live site, all fixed:
       maths are pure functions and the obvious first candidates. Vitest is the
       natural fit; this is an infrastructure decision rather than part of any
       feature, so it is flagged rather than assumed.
+- [x] **Contact form now notifies someone (Resend).** It was storing every
+      message to `contact_messages` and emailing nobody — with no admin screen
+      for that table either, an enquiry could sit unseen indefinitely and look,
+      from outside, like being ignored.
+- [x] The three env vars are **optional**. A contact message is written to the
+      database before any email is attempted, so email is a notification, not
+      the record. Requiring a key would stop the whole site booting over a
+      feature that only makes an existing message arrive sooner, and would
+      block local development for anyone without a Resend account.
+- [x] Sending happens **after** the save and outside the failure path. A
+      provider outage must not tell a visitor their message failed and prompt
+      them to send it again — the worst case is a slow reply, not a lost
+      enquiry. Failures are logged as "stored but no one was notified".
+- [x] **Two emails per submission, both from `dev@apexita.com`**: an
+      acknowledgement to whoever wrote in, and the lead itself to
+      `adamanthony987@gmail.com`. Sent together but settled independently — a
+      mistyped sender address is the commonest failure here and must not cost
+      the team the lead, and a team mailbox problem must not stop the sender
+      being thanked. They are logged at different levels for the same reason: a
+      failed acknowledgement is an inconvenience, a failed team notification is
+      a lead sitting unseen.
+- [x] Templates are built separately from sending (`buildAcknowledgement`,
+      `buildTeamNotification` return subject/html/text). A template that can
+      only be seen in production is a template whose bugs are found by
+      customers. Rendered both against a message containing
+      `<script>alert("xss")</script>` — neither HTML body contained it
+      unescaped.
+- [x] **Bug found by rendering them: no `<meta charset>` on the email HTML.**
+      Resend declares UTF-8 in the MIME header, but not every mail client reads
+      that before decoding the body — em dashes and accented names arrived as
+      mojibake. Visible immediately once the template was actually looked at.
+- [x] `replyTo` is the sender's address, so answering is just hitting reply.
+      The sender's own subject line goes in the body rather than the subject,
+      where it could be used to forge something resembling a system notice.
+      All submitted text is HTML-escaped — it is written by strangers and
+      rendered by a mail client.
+- [x] Verified in the unconfigured state, which is how the project ships:
+      submitted the live form with no Resend key set, and the message was
+      stored, the visitor saw success, and nothing errored.
+- [x] **Messages inbox** (`/admin/messages`) — the destination the dashboard's
+      "New messages" counter never had. The contact form was writing to a table
+      nobody could read from the panel, so an enquiry was only visible to
+      someone willing to query the database. Verified against a real message
+      that had been sitting in there unread.
+- [x] Opening the inbox marks what is in it as read, the way a mail client
+      does. Left to a manual button, the dashboard counter stays lit after
+      someone has plainly seen them — and a counter that lies gets ignored,
+      which costs more than the convenience saved.
+- [x] "Reply" opens the operator's own mail client rather than building a
+      sending UI. The reply belongs where the thread, signature and follow-up
+      already live; duplicating that badly would make answering someone harder,
+      not easier. Marking it replied is the part that belongs in the panel.
+- [x] **Every dashboard stat is now a link.** A page headed "what the platform
+      needs from you right now", made of unclickable numbers, tells an operator
+      there is work without telling them where it is — they read "6 unverified"
+      and then go hunting through the sidebar. All four attention cards, all
+      five status tiles and the last-crawl panel now go to the exact filtered
+      view behind them.
+- [x] Two of those counters had nowhere to point, so the list gained the views:
+      `?view=unverified` (published, never verified) and `?view=closing`
+      (published, closing within 14 days). The definitions are copied from
+      `admin-stats-repository` deliberately — if they drifted, the dashboard
+      count and the list it links to would disagree, which is worse than not
+      linking at all. Verified: dashboard said 6 unverified and 4 closing, the
+      lists showed "6 of 6" and "4 of 4".
 - [ ] Contact address sub-fields (`contact_address` is seeded as `{}` and not
       yet exposed in the form)
 

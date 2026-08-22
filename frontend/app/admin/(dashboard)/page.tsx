@@ -45,6 +45,7 @@ export default async function AdminDashboardPage() {
             value={overview.pendingReview}
             hint="Extractions below the confidence threshold"
             tone={overview.pendingReview > 0 ? "warning" : "quiet"}
+            href={`${routes.admin.grants}?status=pending_review`}
           />
           <AttentionCard
             icon={AlertTriangle}
@@ -52,6 +53,7 @@ export default async function AdminDashboardPage() {
             value={overview.unverified}
             hint="Published with no verification date"
             tone={overview.unverified > 0 ? "warning" : "quiet"}
+            href={`${routes.admin.grants}?view=unverified`}
           />
           <AttentionCard
             icon={Clock}
@@ -59,6 +61,7 @@ export default async function AdminDashboardPage() {
             value={overview.closingSoon}
             hint="Published grants about to expire"
             tone="quiet"
+            href={`${routes.admin.grants}?view=closing`}
           />
           <AttentionCard
             icon={Inbox}
@@ -66,6 +69,7 @@ export default async function AdminDashboardPage() {
             value={overview.newMessages}
             hint="Unread contact enquiries"
             tone={overview.newMessages > 0 ? "info" : "quiet"}
+            href={`${routes.admin.messages}?status=new`}
           />
         </div>
       </section>
@@ -75,18 +79,25 @@ export default async function AdminDashboardPage() {
         <dl className="mt-4 grid grid-cols-2 gap-x-8 gap-y-6 border-y border-border py-6 sm:grid-cols-3 lg:grid-cols-5">
           {(
             [
-              ["Published", overview.grantsByStatus.published],
-              ["Pending review", overview.grantsByStatus.pending_review],
-              ["Draft", overview.grantsByStatus.draft],
-              ["Expired", overview.grantsByStatus.expired],
-              ["Archived", overview.grantsByStatus.archived],
+              ["Published", "published", overview.grantsByStatus.published],
+              ["Pending review", "pending_review", overview.grantsByStatus.pending_review],
+              ["Draft", "draft", overview.grantsByStatus.draft],
+              ["Expired", "expired", overview.grantsByStatus.expired],
+              ["Archived", "archived", overview.grantsByStatus.archived],
             ] as const
-          ).map(([label, value]) => (
+          ).map(([label, status, value]) => (
             <div key={label}>
               <dt className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
                 {label}
               </dt>
-              <dd className="mt-1 font-mono text-2xl font-semibold tabular-nums">{value}</dd>
+              <dd className="mt-1">
+                <Link
+                  href={`${routes.admin.grants}?status=${status}`}
+                  className="font-mono text-2xl font-semibold tabular-nums underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                >
+                  {value}
+                </Link>
+              </dd>
             </div>
           ))}
         </dl>
@@ -95,19 +106,26 @@ export default async function AdminDashboardPage() {
       <section aria-labelledby="pipeline">
         <SectionHeading id="pipeline">Pipeline</SectionHeading>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-card border border-border p-5">
+          <Link
+            href={routes.admin.crawler}
+            className="group rounded-card border border-border p-5 transition-colors hover:border-foreground/25 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+          >
             <p className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
               Last crawl
             </p>
-            <p className="mt-1 font-mono text-lg font-semibold">
+            <p className="mt-1 flex items-center gap-1.5 font-mono text-lg font-semibold">
               {overview.lastCrawlAt === null ? "Never run" : formatDate(overview.lastCrawlAt)}
+              <ArrowUpRight
+                className="size-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                aria-hidden="true"
+              />
             </p>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
               {overview.lastCrawlAt === null
                 ? "The Python pipeline has not reported a run yet."
                 : "Most recent crawler run recorded."}
             </p>
-          </div>
+          </Link>
 
           <div className="rounded-card border border-border p-5">
             <p className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
@@ -182,29 +200,53 @@ const TONE_STYLES = {
   quiet: "border-border",
 } as const;
 
+/**
+ * A counter that goes somewhere.
+ *
+ * A dashboard headed "what the platform needs from you right now" and made of
+ * unclickable numbers tells an operator there is work without telling them
+ * where it is — they read "3 awaiting review", then go hunting through the
+ * sidebar for the list. Every figure here is a link to the exact filtered view
+ * behind it.
+ */
 function AttentionCard({
   icon: Icon,
   label,
   value,
   hint,
   tone,
+  href,
 }: {
   readonly icon: typeof Clock;
   readonly label: string;
   readonly value: number;
   readonly hint: string;
   readonly tone: keyof typeof TONE_STYLES;
+  readonly href: string;
 }) {
   return (
-    <div className={cn("rounded-card border p-5", TONE_STYLES[tone])}>
+    <Link
+      href={href}
+      className={cn(
+        "group rounded-card border p-5 transition-colors",
+        "hover:border-foreground/25 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
+        TONE_STYLES[tone],
+      )}
+    >
       <div className="flex items-center justify-between">
         <p className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
           {label}
         </p>
         <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
       </div>
-      <p className="mt-2 font-mono text-3xl font-semibold tabular-nums">{value}</p>
+      <p className="mt-2 flex items-center gap-1.5 font-mono text-3xl font-semibold tabular-nums">
+        {value}
+        <ArrowUpRight
+          className="size-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+          aria-hidden="true"
+        />
+      </p>
       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{hint}</p>
-    </div>
+    </Link>
   );
 }

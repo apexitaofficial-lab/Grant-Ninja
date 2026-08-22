@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
+import { AdminSearchField } from "@/features/admin/components/admin-search-field";
 import { GrantStatusBadge } from "@/features/admin/components/grant-status-badge";
+import type { AdminGrantView } from "@/features/admin/repositories/grant-admin-repository";
 import { grantAdminRepository } from "@/features/admin/repositories/grant-admin-repository";
 import { requireAdmin } from "@/features/admin/services/auth-service";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -52,14 +54,69 @@ export default async function AdminGrantsPage({
   await requireAdmin("editor");
 
   const params = await searchParams;
-  const statusParam = typeof params["status"] === "string" ? params["status"] : "pending_review";
+  const viewParam = typeof params["view"] === "string" ? params["view"] : undefined;
+  const view: AdminGrantView | undefined =
+    viewParam === "unverified" || viewParam === "closing" ? viewParam : undefined;
+
+  // A view arriving from the dashboard replaces the status tabs rather than
+  // combining with them — "unverified" already means published, so pairing it
+  // with a status filter could only ever produce an empty list.
+  const statusParam =
+    view !== undefined
+      ? "all"
+      : typeof params["status"] === "string"
+        ? params["status"]
+        : "pending_review";
   const search = typeof params["q"] === "string" ? params["q"] : undefined;
   const page = Number(typeof params["page"] === "string" ? params["page"] : "1") || 1;
 
   const [{ items, total }, counts] = await Promise.all([
-    grantAdminRepository.list({ status: parseStatus(statusParam), search, page }),
+    grantAdminRepository.list({
+      status: view === undefined ? parseStatus(statusParam) : undefined,
+      view,
+      search,
+      page,
+    }),
     grantAdminRepository.countsByStatus(),
   ]);
+
+  const VIEW_COPY = {
+    unverified: {
+      title: "Published, never verified",
+      hint: "These are live on the site but nobody has confirmed the details against the original notice since they were extracted.",
+    },
+    closing: {
+      title: "Closing within 14 days",
+      hint: "Published grants whose deadline is imminent. Worth a check that the date is still right before applicants rely on it.",
+    },
+  } as const;
+
+  // Handed to the search field so typing preserves the status filter rather
+  // than dropping the reviewer back to "everything".
+  const currentQuery = new URLSearchParams(
+    Object.entries(params).flatMap(([key, value]) =>
+      typeof value === "string" ? [[key, value] as [string, string]] : [],
+    ),
+  ).toString();
+
+  /**
+   * Switching status keeps the search term. Dropping it would silently widen
+   * the list back to everything the moment a reviewer changed tab, which reads
+   * as the filter breaking rather than as a deliberate reset. Page number is
+   * left off on purpose — page 4 of the old result set means nothing in the new
+   * one.
+   */
+  const statusHref = (value: GrantStatus | "all"): string => {
+    const next = new URLSearchParams();
+
+    next.set("status", value);
+
+    if (search !== undefined && search !== "") {
+      next.set("q", search);
+    }
+
+    return `/admin/grants?${next.toString()}`;
+  };
 
   const countFor = (value: GrantStatus | "all"): number | null => {
     switch (value) {
@@ -85,6 +142,32 @@ export default async function AdminGrantsPage({
         </p>
       </div>
 
+      {view !== undefined && (
+        <div className="flex flex-wrap items-start justify-between gap-3 rounded-card border border-border bg-muted/30 px-4 py-3">
+          <div>
+            <p className="text-sm font-medium">{VIEW_COPY[view].title}</p>
+            <p className="mt-1 max-w-xl text-xs leading-relaxed text-muted-foreground">
+              {VIEW_COPY[view].hint}
+            </p>
+          </div>
+          <Link
+            href="/admin/grants?status=pending_review"
+            className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+          >
+            Clear filter
+          </Link>
+        </div>
+      )}
+
+      {/* The repository has always supported a search term; until now nothing
+          rendered a box to type it into, so the capability was unreachable. */}
+      <AdminSearchField
+        label="Search grants"
+        placeholder="Search by title"
+        initialValue={search ?? ""}
+        currentQuery={currentQuery}
+      />
+
       <nav
         aria-label="Filter by status"
         className="flex flex-wrap gap-2 border-b border-border pb-3"
@@ -96,7 +179,7 @@ export default async function AdminGrantsPage({
           return (
             <Link
               key={tab.value}
-              href={`/admin/grants?status=${tab.value}`}
+              href={statusHref(tab.value)}
               aria-current={isActive ? "page" : undefined}
               className={cn(
                 "flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
