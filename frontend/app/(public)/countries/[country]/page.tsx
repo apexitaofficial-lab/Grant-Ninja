@@ -11,7 +11,11 @@ import { StatRow } from "@/components/shared/stat-row";
 import { Button } from "@/components/ui/button";
 import { routes } from "@/config/routes";
 import { GrantResultList } from "@/features/grants/components/grant-result-list";
-import { toSearchParams } from "@/features/grants/services/grant-filter-params";
+import {
+  FUNDING_SOURCE_LABELS,
+  parseGrantFilters,
+  toSearchParams,
+} from "@/features/grants/services/grant-filter-params";
 import { listGrants, parsePagination, parseSort } from "@/features/grants/services/grant-service";
 import {
   buildBreadcrumbSchema,
@@ -19,7 +23,11 @@ import {
   buildFaqSchema,
 } from "@/features/seo/lib/json-ld";
 import { getEntityFaqs } from "@/features/shared/services/faq-service";
-import { getCountry, listStates } from "@/features/shared/services/reference-service";
+import {
+  getCountry,
+  getFundingBreakdown,
+  listStates,
+} from "@/features/shared/services/reference-service";
 import { getSiteIdentity } from "@/features/shared/services/settings-service";
 
 interface CountryPageProps {
@@ -61,13 +69,25 @@ export default async function CountryPage({ params, searchParams }: CountryPageP
   const sort = parseSort(single(query["sort"]), "newest");
   const { page, pageSize } = parsePagination(single(query["page"]));
 
-  const [result, states, faqs] = await Promise.all([
-    listGrants({ page, pageSize, sort, countrySlug: country.slug }),
+  // The funding-level cards link back to this page with `?source=federal`, so
+  // it has to parse filters rather than only sort and page — otherwise the
+  // links change the URL and the list stays exactly as it was.
+  const filters = parseGrantFilters(toSearchParams(query));
+
+  const [result, states, faqs, funding] = await Promise.all([
+    listGrants({ ...filters, page, pageSize, sort, countrySlug: country.slug }),
     listStates(country.slug),
     getEntityFaqs("country", country.id),
+    getFundingBreakdown(country.id),
   ]);
 
   const identity = await getSiteIdentity();
+
+  // Only states that actually have something. Fifty-two buttons, fifty-one of
+  // them reading zero, is a wall of dead ends that makes the page look broken
+  // rather than early — and it buries the one state that does have grants.
+  const statesWithGrants = states.filter((state) => state.grantCount > 0);
+  const emptyStateCount = states.length - statesWithGrants.length;
 
   return (
     <>
@@ -118,9 +138,49 @@ export default async function CountryPage({ params, searchParams }: CountryPageP
           ]}
         />
 
-        {/* Only shown when the country actually has regions — an empty
-            "browse by state" section is a dead end (open question Q2). */}
-        {states.length > 0 && (
+        {/* Where the money comes from. Only rendered when the split is
+            meaningful — a country with one funding level does not need a
+            breakdown of one row. */}
+        {funding.federal + funding.state + funding.private > 0 && (
+          <section aria-labelledby="funding-levels" className="mb-12">
+            <h2
+              id="funding-levels"
+              className="border-b border-border pb-2 font-mono text-xs tracking-widest text-muted-foreground uppercase"
+            >
+              By level of government
+            </h2>
+            <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+              <FundingLevel
+                label="Federal"
+                description="National agencies"
+                count={funding.federal}
+                href={`${routes.country(country.slug)}?source=federal`}
+              />
+              {/* Deliberately not labelled with a "states covered" count.
+                  `state_id` marks where a grant applies, not who funds it — a
+                  federal grant restricted to one state carries it too — so
+                  that figure next to a "state and local" total would imply
+                  state funding that is not there. Coverage is stated under
+                  "browse by state", where it means what it says. */}
+              <FundingLevel
+                label="State and local"
+                description="Programmes funded by state or city government"
+                count={funding.state}
+                href={`${routes.country(country.slug)}?source=state`}
+              />
+              <FundingLevel
+                label="Private"
+                description="Foundations and trusts"
+                count={funding.private}
+                href={`${routes.country(country.slug)}?source=private`}
+              />
+            </ul>
+          </section>
+        )}
+
+        {/* Only states that have something to show. See the comment where
+            `statesWithGrants` is built. */}
+        {statesWithGrants.length > 0 && (
           <section aria-labelledby="states" className="mb-12">
             <h2
               id="states"
@@ -129,7 +189,7 @@ export default async function CountryPage({ params, searchParams }: CountryPageP
               Browse by state
             </h2>
             <ul className="mt-4 flex flex-wrap gap-2">
-              {states.map((state) => (
+              {statesWithGrants.map((state) => (
                 <li key={state.slug}>
                   <Button asChild variant="outline" size="sm">
                     <Link href={routes.state(country.slug, state.slug)}>
@@ -142,7 +202,37 @@ export default async function CountryPage({ params, searchParams }: CountryPageP
                 </li>
               ))}
             </ul>
+            {emptyStateCount > 0 && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                {emptyStateCount} further {emptyStateCount === 1 ? "state has" : "states have"} no
+                published grants yet. Their programmes are added as each state&rsquo;s portal is
+                connected.
+              </p>
+            )}
           </section>
+        )}
+
+        {/* An active filter has to be visible and reversible. Arriving from a
+            funding-level card and seeing a shorter list with no explanation
+            reads as missing data rather than as a filter doing its job. */}
+        {(filters.fundingSources ?? []).length > 0 && (
+          <div className="mb-6 flex flex-wrap items-center gap-3 rounded-card border border-border bg-muted/30 px-4 py-3">
+            <span className="text-sm">
+              Showing{" "}
+              <strong>
+                {(filters.fundingSources ?? [])
+                  .map((source) => FUNDING_SOURCE_LABELS[source].toLowerCase())
+                  .join(", ")}
+              </strong>{" "}
+              grants only
+            </span>
+            <Link
+              href={routes.country(country.slug)}
+              className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+            >
+              Show all
+            </Link>
+          </div>
         )}
 
         <GrantResultList
@@ -157,5 +247,58 @@ export default async function CountryPage({ params, searchParams }: CountryPageP
         <FaqSection items={faqs} headingId="country-faq" className="mt-20" />
       </Container>
     </>
+  );
+}
+
+/**
+ * One level of government, as a way in rather than a statistic.
+ *
+ * A count with nowhere to go tells someone there are 23 federal grants and
+ * leaves them to find them; each of these links straight to that filtered
+ * list. Zero is rendered rather than hidden — "no private funding recorded"
+ * is itself an answer, and a missing row would just read as an oversight.
+ */
+function FundingLevel({
+  label,
+  description,
+  count,
+  href,
+}: {
+  readonly label: string;
+  readonly description: string;
+  readonly count: number;
+  readonly href: string;
+}) {
+  const content = (
+    <>
+      <span className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+        {label}
+      </span>
+      <span className="mt-1 block font-mono text-2xl font-semibold tabular-nums">
+        {count.toLocaleString("en-US")}
+      </span>
+      <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+        {description}
+      </span>
+    </>
+  );
+
+  if (count === 0) {
+    return (
+      <li className="rounded-card border border-border p-4 opacity-60">
+        <span className="block">{content}</span>
+      </li>
+    );
+  }
+
+  return (
+    <li>
+      <Link
+        href={href}
+        className="block rounded-card border border-border p-4 transition-colors hover:border-foreground/25 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+      >
+        {content}
+      </Link>
+    </li>
   );
 }

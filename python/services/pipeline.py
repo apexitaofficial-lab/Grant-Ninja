@@ -51,6 +51,27 @@ def _optional_str(value: object) -> str | None:
     return str(value) if isinstance(value, str) and value != "" else None
 
 
+def _is_federal_source(source: dict[str, Any]) -> bool:
+    """Whether a source publishes federal funding.
+
+    A source tied to a state publishes that state's programmes; anything else
+    configured so far is a national government portal, and everything on
+    grants.gov is federal by definition.
+
+    A source's own `config` can override this with `{"funding_level": ...}`,
+    which is what a private foundation source will need — there is no such
+    source yet, so the default is deliberately the honest one rather than a
+    guess dressed up as a rule.
+    """
+    config = source.get("config")
+    level = str(config.get("funding_level", "")).strip().lower() if isinstance(config, dict) else ""
+
+    if level in {"federal", "state", "private"}:
+        return level == "federal"
+
+    return _optional_str(source.get("state_id")) is None
+
+
 @dataclass
 class RunTally:
     """What a run did. Mirrors the columns on `crawler_runs`."""
@@ -224,6 +245,7 @@ class CrawlPipeline:
             # state government for a state portal. Used only when the specific
             # department cannot be matched.
             fallback_organization_id=_optional_str(source.get("organization_id")),
+            is_federal=_is_federal_source(source),
         )
 
         if normalized.grant is None:

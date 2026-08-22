@@ -57,6 +57,23 @@ export interface StateSummary {
   readonly grantCount: number;
 }
 
+/**
+ * Where a country's grants come from.
+ *
+ * "Federal" and "state" are the distinction an applicant actually cares about:
+ * a Californian searching for funding wants to know both what Washington
+ * offers and what Sacramento offers, and a single combined total answers
+ * neither question.
+ */
+export interface FundingBreakdown {
+  readonly federal: number;
+  readonly state: number;
+  readonly private: number;
+  /** States that have at least one published grant. */
+  readonly statesWithGrants: number;
+  readonly statesTotal: number;
+}
+
 export interface PlatformStatistics {
   readonly grants: number;
   readonly countries: number;
@@ -149,6 +166,47 @@ export class ReferenceRepository extends BaseRepository {
       code: row.code,
       grantCount: row.grant_count,
     }));
+  }
+
+  /**
+   * Federal / state / private split for one country.
+   *
+   * Counted with `head: true`, so Postgres returns totals without shipping
+   * rows. `is_federal` and `is_private` are independent flags and "state"
+   * means neither — the same rule the grants filter uses, so the number here
+   * and the list it links to can never disagree.
+   */
+  async getFundingBreakdown(countryId: string): Promise<FundingBreakdown> {
+    const supabase = await createSupabaseServerClient();
+
+    const published = () =>
+      supabase
+        .from("grants")
+        .select("id", { count: "exact", head: true })
+        .eq("country_id", countryId)
+        .eq("status", "published")
+        .is("deleted_at", null);
+
+    const [federal, priv, state, states] = await Promise.all([
+      published().eq("is_federal", true),
+      published().eq("is_private", true),
+      published().eq("is_federal", false).eq("is_private", false),
+      supabase
+        .from("states")
+        .select("grant_count")
+        .eq("country_id", countryId)
+        .is("deleted_at", null),
+    ]);
+
+    const stateRows = states.data ?? [];
+
+    return {
+      federal: federal.count ?? 0,
+      state: state.count ?? 0,
+      private: priv.count ?? 0,
+      statesWithGrants: stateRows.filter((row) => row.grant_count > 0).length,
+      statesTotal: stateRows.length,
+    };
   }
 
   /** Scoped by country: state slugs are unique per country, not globally. */
