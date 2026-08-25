@@ -73,6 +73,12 @@ export const SETTING_GROUPS: readonly SettingGroup[] = [
     fields: [
       { key: "contact_email", label: "Public email", kind: "email" },
       { key: "contact_phone", label: "Public telephone", kind: "tel" },
+      {
+        key: "zendesk_widget_key",
+        label: "Zendesk widget key",
+        kind: "text",
+        help: "Loads the support chat bubble on every public page. Clearing this removes the widget from the site — no deploy needed.",
+      },
     ],
   },
   {

@@ -3,6 +3,7 @@ import "server-only";
 import { cache } from "react";
 
 import { clientEnv } from "@/config/env";
+import type { SiteAddress } from "@/features/seo/lib/json-ld";
 import type { SameAsProfile } from "@/features/shared/repositories/settings-repository";
 import { settingsRepository } from "@/features/shared/repositories/settings-repository";
 import { logger } from "@/lib/logger";
@@ -103,6 +104,19 @@ export async function getRobotsSettings(): Promise<RobotsSettings> {
   };
 }
 
+/**
+ * Zendesk Web Widget key, or null when support chat is switched off.
+ *
+ * Not a secret — it is served to every visitor in the page source — but it
+ * lives in settings so the account can be changed or the widget disabled
+ * without a deploy (D8).
+ */
+export async function getZendeskWidgetKey(): Promise<string | null> {
+  const settings = await loadSettings();
+
+  return emptyToNull(asString(settings.get("zendesk_widget_key"), ""));
+}
+
 export async function getLlmsTxtOverride(): Promise<string | null> {
   const settings = await loadSettings();
 
@@ -115,13 +129,60 @@ export async function getSocialProfiles(): Promise<readonly SameAsProfile[]> {
 }
 
 /**
- * The `sameAs` array for Organization JSON-LD — primary profiles only (D7),
- * generated from the database rather than a constant.
+ * The `sameAs` array for Organization JSON-LD, generated from the database
+ * rather than a constant.
+ *
+ * Every enabled profile is emitted, not only the primary ones.
+ *
+ * D7 originally restricted this to primary profiles on the theory that
+ * low-authority directories dilute the entity signal. The client has since
+ * required the full supplied list as a milestone condition, and the theory does
+ * not really survive contact with how `sameAs` works: it is a set of identity
+ * claims, and a profile that genuinely belongs to the organization is a true
+ * claim whatever the host's authority. `isPrimary` still drives which profiles
+ * the footer leads with, which is where the ranking actually mattered.
+ *
+ * Duplicates are removed because two identical `sameAs` entries describe the
+ * same claim twice and read as sloppy markup.
  */
 export async function getSameAsUrls(): Promise<readonly string[]> {
   const profiles = await loadSameAs();
 
-  return profiles.filter((profile) => profile.isPrimary).map((profile) => profile.url);
+  return [...new Set(profiles.map((profile) => profile.url))];
+}
+
+/**
+ * The organization's postal address, when settings actually record one.
+ *
+ * Returns null unless a street and a locality are both present. A partial
+ * address in Organization JSON-LD is worse than none: it asserts a physical
+ * presence that cannot be checked, which is precisely the kind of claim
+ * structured data is penalised for.
+ */
+export async function getSiteAddress(): Promise<SiteAddress | null> {
+  const settings = await loadSettings();
+  const raw = settings.get("contact_address");
+
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return null;
+  }
+
+  const record = raw as Record<string, unknown>;
+  const read = (key: string): string | null => {
+    const value = record[key];
+
+    return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
+  };
+
+  const address: SiteAddress = {
+    streetAddress: read("line1"),
+    addressLocality: read("city"),
+    addressRegion: read("region"),
+    postalCode: read("postal_code"),
+    addressCountry: read("country_code"),
+  };
+
+  return address.streetAddress === null || address.addressLocality === null ? null : address;
 }
 
 function emptyToNull(value: string): string | null {

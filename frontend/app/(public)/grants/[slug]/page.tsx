@@ -26,9 +26,12 @@ import {
 } from "@/features/grants/services/grant-service";
 import { resolveDeadline } from "@/features/grants/utils/deadline";
 import {
-  buildBreadcrumbSchema,
   buildFaqSchema,
+  buildGrantArticleSchema,
+  buildGrantBreadcrumbSchema,
+  buildGrantDatasetSchema,
   buildGrantSchema,
+  buildGrantWebPageSchema,
 } from "@/features/seo/lib/json-ld";
 import { getSiteIdentity } from "@/features/shared/services/settings-service";
 import { formatDate, formatFundingRange } from "@/lib/format";
@@ -80,10 +83,22 @@ export default async function GrantDetailPage({ params }: GrantDetailPageProps) 
 
   return (
     <>
+      {/*
+        Five entities, one graph. The page is about a funding programme
+        (MonetaryGrant), presents an editorial write-up of it (Article) and the
+        structured record behind it (Dataset); WebPage is the node those hang
+        off, and BreadcrumbList is addressable so WebPage.breadcrumb resolves.
+
+        Organization and WebSite are not repeated here — the root layout emits
+        them once and everything above points at them by @id.
+      */}
       <JsonLd
         schemas={[
+          buildGrantWebPageSchema(grant, identity),
           buildGrantSchema(grant, identity),
-          buildBreadcrumbSchema(
+          buildGrantArticleSchema(grant, identity),
+          buildGrantDatasetSchema(grant, identity),
+          buildGrantBreadcrumbSchema(
             [
               { name: "Home", path: routes.home },
               { name: "Grants", path: routes.grants },
@@ -92,7 +107,8 @@ export default async function GrantDetailPage({ params }: GrantDetailPageProps) 
                 : [{ name: category.name, path: routes.category(category.slug) }]),
               { name: grant.title, path: routes.grant(grant.slug) },
             ],
-            identity.url,
+            grant,
+            identity,
           ),
           // Only emitted when the questions are actually on the page.
           buildFaqSchema(grant.faqs),

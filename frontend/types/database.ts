@@ -1509,6 +1509,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_grant: {
+        Args: {
+          p_category_ids?: string[]
+          p_change_reason?: string
+          p_grant: Json
+          p_primary_category_id?: string
+        }
+        Returns: string
+      }
+      admin_create_organization: {
+        Args: {
+          p_country_id: string
+          p_name: string
+          p_organization_type?: Database["public"]["Enums"]["organization_type"]
+          p_website?: string
+        }
+        Returns: string
+      }
       admin_delete_grant: {
         Args: { p_grant_id: string; p_reason?: string }
         Returns: string
@@ -1534,6 +1552,21 @@ export type Database = {
       }
       admin_save_grant: {
         Args: { p_change_reason?: string; p_grant_id: string; p_patch: Json }
+        Returns: string
+      }
+      admin_set_grant_classification: {
+        Args: {
+          p_category_ids?: string[]
+          p_change_reason?: string
+          p_clear_state?: boolean
+          p_country_id?: string
+          p_grant_id: string
+          p_is_federal?: boolean
+          p_is_private?: boolean
+          p_organization_id?: string
+          p_primary_category_id?: string
+          p_state_id?: string
+        }
         Returns: string
       }
       admin_set_grant_status: {
