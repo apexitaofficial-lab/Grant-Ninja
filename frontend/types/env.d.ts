@@ -18,5 +18,12 @@ declare namespace NodeJS {
     readonly RESEND_API_KEY?: string;
     readonly RESEND_FROM_EMAIL?: string;
     readonly CONTACT_NOTIFICATION_EMAIL?: string;
+
+    /**
+     * Set by Vercel, not by us: "production" | "preview" | "development".
+     * Absent for a local build, which is what distinguishes a real deployment
+     * from `next build` on a developer's machine.
+     */
+    readonly VERCEL_ENV?: string;
   }
 }

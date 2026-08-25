@@ -4,10 +4,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { routes } from "@/config/routes";
+import { GrantClassificationEditor } from "@/features/admin/components/grant-classification-editor";
+import { GrantDeleteButton } from "@/features/admin/components/grant-delete-button";
 import { GrantEditor } from "@/features/admin/components/grant-editor";
 import { GrantReviewActions } from "@/features/admin/components/grant-review-actions";
 import { GrantStatusBadge } from "@/features/admin/components/grant-status-badge";
 import { grantAdminRepository } from "@/features/admin/repositories/grant-admin-repository";
+import { referenceAdminRepository } from "@/features/admin/repositories/reference-admin-repository";
 import { requireAdmin } from "@/features/admin/services/auth-service";
 import { formatDate } from "@/lib/format";
 
@@ -27,7 +30,12 @@ export default async function AdminGrantPage({
     notFound();
   }
 
-  const history = await grantAdminRepository.listHistory(grant.id);
+  const [history, countries, categories, options] = await Promise.all([
+    grantAdminRepository.listHistory(grant.id),
+    referenceAdminRepository.listCountries(),
+    referenceAdminRepository.listCategories(),
+    referenceAdminRepository.listGrantFormOptions(),
+  ]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -48,7 +56,10 @@ export default async function AdminGrantPage({
               {grant.countryName === "" ? "" : ` · ${grant.countryName}`}
             </p>
           </div>
-          <GrantStatusBadge status={grant.status} />
+          <div className="flex items-center gap-3">
+            <GrantStatusBadge status={grant.status} />
+            <GrantDeleteButton grantId={grant.id} title={grant.title} />
+          </div>
         </div>
       </div>
 
@@ -93,6 +104,21 @@ export default async function AdminGrantPage({
             grantId={grant.id}
             status={grant.status}
             hasCategory={grant.categoryNames.length > 0}
+          />
+        </div>
+      </section>
+
+      <section aria-labelledby="filing">
+        <SectionHeading id="filing">Filing</SectionHeading>
+        <div className="mt-4">
+          <GrantClassificationEditor
+            grant={grant}
+            data={{
+              countries,
+              categories,
+              agencies: options.agencies,
+              states: options.states,
+            }}
           />
         </div>
       </section>

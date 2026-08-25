@@ -36,6 +36,14 @@ export interface AdminGrantDetail extends AdminGrantListItem {
   readonly currentVersion: number;
   readonly publishedAt: string | null;
   readonly countryName: string;
+  /** Ids, so the edit form can preselect what the grant is currently filed under. */
+  readonly countryId: string;
+  readonly organizationId: string;
+  readonly stateId: string | null;
+  readonly categoryIds: readonly string[];
+  readonly primaryCategoryId: string | null;
+  readonly isFederal: boolean;
+  readonly isPrivate: boolean;
 }
 
 export interface GrantHistoryEntry {
@@ -77,6 +85,49 @@ export interface GrantPatch {
 }
 
 /**
+ * What `admin_create_grant` reads out of its JSON argument.
+ *
+ * Same discipline as `GrantPatch`: the function pulls keys by name, so an
+ * unnamed or misspelled key does nothing rather than failing loudly.
+ */
+// A type alias rather than an interface, so TypeScript infers an implicit index
+// signature and the row can be passed as JSON without a cast. `GrantPatch`
+// above needs one because an interface never gets that inference.
+export type GrantCreateRow = {
+  readonly title: string;
+  readonly country_id: string;
+  readonly organization_id: string;
+  readonly state_id?: string | null;
+  readonly short_description?: string | null;
+  readonly full_description?: string | null;
+  readonly eligibility?: string | null;
+  readonly minimum_amount?: number | null;
+  readonly maximum_amount?: number | null;
+  readonly currency?: string | null;
+  readonly grant_type?: GrantFundingType;
+  readonly status?: GrantStatus;
+  readonly official_url?: string | null;
+  readonly application_url?: string | null;
+  readonly source_url?: string | null;
+  readonly opens_at?: string | null;
+  readonly closes_at?: string | null;
+  readonly featured?: boolean;
+  readonly is_federal?: boolean;
+  readonly is_private?: boolean;
+};
+
+export interface GrantClassification {
+  readonly grantId: string;
+  readonly countryId: string;
+  readonly organizationId: string;
+  readonly stateId: string | null;
+  readonly categoryIds: readonly string[];
+  readonly primaryCategoryId: string | null;
+  readonly isFederal: boolean;
+  readonly isPrivate: boolean;
+}
+
+/**
  * Extra views the dashboard links into.
  *
  * `unverified` and `closing` are not statuses — they are questions asked of
@@ -109,6 +160,11 @@ interface RawCategoryLink {
   readonly category: Embedded<{ readonly name: string }>;
 }
 
+interface RawCategoryLinkWithId {
+  readonly is_primary: boolean;
+  readonly category: Embedded<{ readonly id: string; readonly name: string }>;
+}
+
 function categoryNames(links: RawCategoryLink[] | null): readonly string[] {
   return (links ?? [])
     .map((link) => toOne(link.category)?.name)
@@ -121,12 +177,17 @@ const LIST_COLUMNS = `
   category_links:grant_category_relations ( category:grant_categories ( name ) )
 `;
 
+// A second, wider selection of the same relation. The list projection only
+// needs names; the editor needs ids and which one is primary to preselect them.
 const DETAIL_COLUMNS = `
-  ${LIST_COLUMNS},
+  id, title, slug, status, ai_confidence, maximum_amount, currency, closes_at, updated_at,
+  organization:organizations ( name ),
   short_description, full_description, eligibility, funding_amount, minimum_amount,
   grant_type, official_url, application_url, source_url, opens_at, featured,
-  current_version, published_at,
-  country:countries ( name )
+  current_version, published_at, country_id, organization_id, state_id,
+  is_federal, is_private,
+  country:countries ( name ),
+  category_links:grant_category_relations ( is_primary, category:grant_categories ( id, name ) )
 `;
 
 /**
@@ -253,6 +314,14 @@ export class GrantAdminRepository extends BaseRepository {
       return null;
     }
 
+    const links = (data.category_links ?? []) as RawCategoryLinkWithId[];
+    const linked = links
+      .map((link) => ({ link, category: toOne(link.category) }))
+      .filter(
+        (entry): entry is { link: RawCategoryLinkWithId; category: { id: string; name: string } } =>
+          entry.category !== null,
+      );
+
     return {
       id: data.id,
       title: data.title,
@@ -261,6 +330,14 @@ export class GrantAdminRepository extends BaseRepository {
       aiConfidence: data.ai_confidence,
       organizationName: toOne(data.organization)?.name ?? "Unknown agency",
       countryName: toOne(data.country)?.name ?? "",
+      countryId: data.country_id,
+      organizationId: data.organization_id,
+      stateId: data.state_id,
+      categoryIds: linked.map((entry) => entry.category.id),
+      primaryCategoryId:
+        linked.find((entry) => entry.link.is_primary)?.category.id ?? null,
+      isFederal: data.is_federal,
+      isPrivate: data.is_private,
       maximumAmount: data.maximum_amount,
       minimumAmount: data.minimum_amount,
       fundingAmount: data.funding_amount,
@@ -269,7 +346,7 @@ export class GrantAdminRepository extends BaseRepository {
       opensAt: data.opens_at,
       updatedAt: data.updated_at,
       publishedAt: data.published_at,
-      categoryNames: categoryNames(data.category_links),
+      categoryNames: linked.map((entry) => entry.category.name),
       shortDescription: data.short_description,
       fullDescription: data.full_description,
       eligibility: data.eligibility,
@@ -349,6 +426,88 @@ export class GrantAdminRepository extends BaseRepository {
     if (error) {
       this.unwrap({ data: null, error }, "softDelete");
     }
+  }
+
+  /**
+   * Creates a grant by hand. Returns the new id.
+   *
+   * Goes through `admin_create_grant` for the same reason `save` goes through
+   * `admin_save_grant`: an insert through PostgREST would leave the grant with
+   * no version 1 snapshot and no history entry, because nothing writes those
+   * automatically — see migrations 0022 and 0027.
+   */
+  async create(
+    input: GrantCreateRow,
+    categoryIds: readonly string[],
+    primaryCategoryId: string | null,
+    reason: string,
+  ): Promise<string> {
+    const supabase = await createSupabaseServerClient();
+
+    const { data, error } = await supabase.rpc("admin_create_grant", {
+      p_grant: input,
+      p_category_ids: [...categoryIds],
+      ...(primaryCategoryId === null ? {} : { p_primary_category_id: primaryCategoryId }),
+      p_change_reason: reason,
+    });
+
+    if (error) {
+      this.unwrap({ data: null, error }, "create");
+    }
+
+    return data as string;
+  }
+
+  /** Country, agency, state, categories and funding level — see migration 0027. */
+  async setClassification(input: GrantClassification, reason: string): Promise<void> {
+    const supabase = await createSupabaseServerClient();
+
+    const { error } = await supabase.rpc("admin_set_grant_classification", {
+      p_grant_id: input.grantId,
+      p_country_id: input.countryId,
+      p_organization_id: input.organizationId,
+      ...(input.stateId === null ? {} : { p_state_id: input.stateId }),
+      p_clear_state: input.stateId === null,
+      p_category_ids: [...input.categoryIds],
+      ...(input.primaryCategoryId === null
+        ? {}
+        : { p_primary_category_id: input.primaryCategoryId }),
+      p_is_federal: input.isFederal,
+      p_is_private: input.isPrivate,
+      p_change_reason: reason,
+    });
+
+    if (error) {
+      this.unwrap({ data: null, error }, "setClassification");
+    }
+  }
+
+  /**
+   * Finds or creates a funding agency.
+   *
+   * Every one of the crawled agencies is American, so a UK or Italian grant has
+   * nothing to pick from. The database function returns the existing row when
+   * the name already exists in that country, so a retry cannot split one agency
+   * into two.
+   */
+  async findOrCreateOrganization(
+    name: string,
+    countryId: string,
+    website: string | null,
+  ): Promise<string> {
+    const supabase = await createSupabaseServerClient();
+
+    const { data, error } = await supabase.rpc("admin_create_organization", {
+      p_name: name,
+      p_country_id: countryId,
+      ...(website === null ? {} : { p_website: website }),
+    });
+
+    if (error) {
+      this.unwrap({ data: null, error }, "findOrCreateOrganization");
+    }
+
+    return data as string;
   }
 }
 

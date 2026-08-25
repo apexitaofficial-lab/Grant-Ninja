@@ -1,7 +1,10 @@
+import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { routes } from "@/config/routes";
 import { AdminSearchField } from "@/features/admin/components/admin-search-field";
 import { GrantStatusBadge } from "@/features/admin/components/grant-status-badge";
 import type { AdminGrantView } from "@/features/admin/repositories/grant-admin-repository";
@@ -135,11 +138,20 @@ export default async function AdminGrantsPage({
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Grants</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Everything the pipeline has found, and everything waiting on a decision.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Grants</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Everything the pipeline has found, everything added by hand, and everything waiting on a
+            decision.
+          </p>
+        </div>
+        <Button asChild>
+          <Link href={routes.admin.newGrant}>
+            <Plus className="size-4" aria-hidden="true" />
+            Add a grant
+          </Link>
+        </Button>
       </div>
 
       {view !== undefined && (

@@ -19,6 +19,21 @@ export type JsonLdObject = Record<string, unknown>;
 
 const CONTEXT = "https://schema.org";
 
+/**
+ * The site's own postal address, when one has been recorded in settings.
+ *
+ * Kept separate from `SiteIdentity` because it is optional in a way the rest of
+ * the identity is not: the site works, and the Organization schema is valid,
+ * with no address at all.
+ */
+export interface SiteAddress {
+  readonly streetAddress: string | null;
+  readonly addressLocality: string | null;
+  readonly addressRegion: string | null;
+  readonly postalCode: string | null;
+  readonly addressCountry: string | null;
+}
+
 function absolute(path: string, siteUrl: string): string {
   return new URL(path, siteUrl).toString();
 }
@@ -40,19 +55,63 @@ function compact(input: JsonLdObject): JsonLdObject {
 // Site-wide
 // ---------------------------------------------------------------------------
 
+/**
+ * Stable identifiers for the two site-wide entities.
+ *
+ * Everything else in the graph points at these rather than restating them, so
+ * a search engine resolves one organization for the whole site. Exported
+ * because per-page builders need to reference them by the identical string —
+ * an `@id` that differs by a character is a second, unrelated entity.
+ */
+export function organizationId(siteUrl: string): string {
+  return `${siteUrl}#organization`;
+}
+
+export function webSiteId(siteUrl: string): string {
+  return `${siteUrl}#website`;
+}
+
+/** A postal address, only when enough of one has actually been recorded. */
+function buildPostalAddress(address: SiteAddress | null): JsonLdObject | null {
+  if (address === null) {
+    return null;
+  }
+
+  // Street plus locality is the minimum that describes a real place. Emitting
+  // a lone country, or a city with nothing else, claims a physical presence
+  // the settings do not actually establish.
+  if (address.streetAddress === null || address.addressLocality === null) {
+    return null;
+  }
+
+  return compact({
+    "@type": "PostalAddress",
+    streetAddress: address.streetAddress,
+    addressLocality: address.addressLocality,
+    addressRegion: address.addressRegion,
+    postalCode: address.postalCode,
+    addressCountry: address.addressCountry,
+  });
+}
+
 export function buildOrganizationSchema(
   identity: SiteIdentity,
   sameAs: readonly string[],
+  address: SiteAddress | null = null,
 ): JsonLdObject {
   return compact({
     "@context": CONTEXT,
     "@type": "Organization",
-    "@id": `${identity.url}#organization`,
+    "@id": organizationId(identity.url),
     name: identity.name,
     url: identity.url,
     logo: absolute(identity.logoUrl, identity.url),
+    // Google reads `image` for the entity card; the logo is the only image the
+    // organization actually has.
+    image: absolute(identity.logoUrl, identity.url),
     description: identity.description,
     sameAs: [...sameAs],
+    address: buildPostalAddress(address),
     contactPoint:
       identity.contactEmail === null && identity.contactPhone === null
         ? null
@@ -73,11 +132,12 @@ export function buildWebSiteSchema(identity: SiteIdentity): JsonLdObject {
   return compact({
     "@context": CONTEXT,
     "@type": "WebSite",
-    "@id": `${identity.url}#website`,
+    "@id": webSiteId(identity.url),
     name: identity.name,
     url: identity.url,
     description: identity.description,
-    publisher: { "@id": `${identity.url}#organization` },
+    inLanguage: "en",
+    publisher: { "@id": organizationId(identity.url) },
     potentialAction: {
       "@type": "SearchAction",
       target: {
@@ -86,6 +146,33 @@ export function buildWebSiteSchema(identity: SiteIdentity): JsonLdObject {
       },
       "query-input": "required name=search_term_string",
     },
+  });
+}
+
+/**
+ * The home page as an entity.
+ *
+ * `WebSite` describes the site; this describes the one page at its root, and
+ * gives the FAQ block something to hang off. Both are needed for the graph to
+ * be complete — a WebSite with no WebPage has no landing node.
+ */
+export function buildHomePageSchema(
+  identity: SiteIdentity,
+  options: { readonly hasFaq: boolean },
+): JsonLdObject {
+  return compact({
+    "@context": CONTEXT,
+    "@type": "WebPage",
+    "@id": `${identity.url}#webpage`,
+    url: identity.url,
+    name: identity.defaultMetaTitle,
+    description: identity.description,
+    isPartOf: { "@id": webSiteId(identity.url) },
+    about: { "@id": organizationId(identity.url) },
+    primaryImageOfPage: absolute(identity.logoUrl, identity.url),
+    inLanguage: "en",
+    // Only claim the FAQ is the page's main entity when it is actually there.
+    mainEntity: options.hasFaq ? { "@id": `${identity.url}#faq` } : null,
   });
 }
 
@@ -114,21 +201,69 @@ export function buildBreadcrumbSchema(
   };
 }
 
-export function buildFaqSchema(items: readonly FaqItem[]): JsonLdObject | null {
+export function buildFaqSchema(
+  items: readonly FaqItem[],
+  /** Supply when another node references the FAQ, so the reference resolves. */
+  id?: string,
+): JsonLdObject | null {
   // FAQPage markup must reflect questions actually visible on the page.
   if (items.length === 0) {
     return null;
   }
 
-  return {
+  return compact({
     "@context": CONTEXT,
     "@type": "FAQPage",
+    "@id": id ?? null,
     mainEntity: items.map((item) => ({
       "@type": "Question",
       name: item.question,
       acceptedAnswer: { "@type": "Answer", text: item.answer },
     })),
-  };
+  });
+}
+
+/**
+ * schema.org has no bare "Grant" type; `MonetaryGrant` is the closest fit and
+ * the one Google documents.
+ *
+ * It has no property for an application deadline, so the closing date is not
+ * expressible here. That is why the date is also rendered as visible text, in
+ * the key-facts table and in an answer capsule — those are what an assistant
+ * reads when the structured data cannot carry the fact.
+ */
+/**
+ * The five `@id`s a grant page uses.
+ *
+ * The page describes several things at once — a funding programme, the write-up
+ * of it, the structured record behind it, and the page itself. Each is a
+ * distinct entity and each needs its own identifier; giving two of them the
+ * same `@id` merges them into one contradictory node.
+ */
+function grantIds(url: string) {
+  return {
+    grant: `${url}#grant`,
+    article: `${url}#article`,
+    dataset: `${url}#dataset`,
+    webpage: `${url}#webpage`,
+    breadcrumb: `${url}#breadcrumb`,
+  } as const;
+}
+
+/** The funder, as a reusable node rather than three near-identical copies. */
+function funderNode(grant: GrantDetail, siteUrl: string): JsonLdObject {
+  return compact({
+    "@type": "Organization",
+    name: grant.organization.name,
+    url:
+      grant.organization.slug === ""
+        ? null
+        : absolute(routes.agency(grant.organization.slug), siteUrl),
+  });
+}
+
+function grantDescription(grant: GrantDetail): string | null {
+  return grant.shortDescription ?? grant.summary ?? grant.fullDescription;
 }
 
 /**
@@ -142,24 +277,18 @@ export function buildFaqSchema(items: readonly FaqItem[]): JsonLdObject | null {
  */
 export function buildGrantSchema(grant: GrantDetail, identity: SiteIdentity): JsonLdObject {
   const url = absolute(routes.grant(grant.slug), identity.url);
+  const ids = grantIds(url);
   const hasAmount = grant.minimumAmount !== null || grant.maximumAmount !== null;
 
   return compact({
     "@context": CONTEXT,
     "@type": "MonetaryGrant",
-    "@id": url,
+    "@id": ids.grant,
     name: grant.title,
-    description: grant.shortDescription ?? grant.summary,
+    description: grantDescription(grant),
     url,
     identifier: grant.slug,
-    funder: compact({
-      "@type": "Organization",
-      name: grant.organization.name,
-      url:
-        grant.organization.slug === ""
-          ? null
-          : absolute(routes.agency(grant.organization.slug), identity.url),
-    }),
+    funder: funderNode(grant, identity.url),
     amount: hasAmount
       ? compact({
           "@type": "MonetaryAmount",
@@ -168,8 +297,163 @@ export function buildGrantSchema(grant: GrantDetail, identity: SiteIdentity): Js
           maxValue: grant.maximumAmount,
         })
       : null,
-    provider: { "@id": `${identity.url}#organization` },
+    // Grant Ninja lists the programme; the agency funds it. `provider` is the
+    // listing party, `funder` the paying one.
+    provider: { "@id": organizationId(identity.url) },
+    mainEntityOfPage: { "@id": ids.webpage },
   });
+}
+
+/** Google truncates headlines past 110 characters; some notice titles run long. */
+function headline(title: string): string {
+  return title.length <= 110 ? title : `${title.slice(0, 107).trimEnd()}…`;
+}
+
+/**
+ * The page as a written work.
+ *
+ * Defensible because the page *is* editorial output: Grant Ninja compiles the
+ * notice into a summary, an eligibility section and answer capsules, and
+ * maintains it. So the author is Grant Ninja, not the funding agency — the
+ * agency wrote the notice, not this page.
+ *
+ * `datePublished` is omitted rather than defaulted when a grant has never been
+ * published, because a publication date for something unpublished is a
+ * fabrication, and dates are the property Google most readily distrusts.
+ */
+export function buildGrantArticleSchema(
+  grant: GrantDetail,
+  identity: SiteIdentity,
+): JsonLdObject {
+  const url = absolute(routes.grant(grant.slug), identity.url);
+  const ids = grantIds(url);
+
+  return compact({
+    "@context": CONTEXT,
+    "@type": "Article",
+    "@id": ids.article,
+    headline: headline(grant.title),
+    name: grant.title,
+    description: grantDescription(grant),
+    url,
+    mainEntityOfPage: { "@id": ids.webpage },
+    about: { "@id": ids.grant },
+    author: { "@id": organizationId(identity.url) },
+    publisher: { "@id": organizationId(identity.url) },
+    isPartOf: { "@id": webSiteId(identity.url) },
+    datePublished: grant.publishedAt,
+    dateModified: grant.updatedAt,
+    inLanguage: "en",
+    // Categories are the page's real subject terms, not invented keywords.
+    keywords: grant.categories.map((category) => category.name),
+  });
+}
+
+/**
+ * The grant as a structured record.
+ *
+ * A single grant is a thin fit for `Dataset` — the type describes a body of
+ * records, and this is one row. It is emitted because the client asked for it
+ * explicitly, and every property here is literally true of the record: it is
+ * based on the official notice, it covers a known area, and it measures the
+ * fields listed. Nothing is added to fill the type out.
+ *
+ * `distribution` is deliberately absent. There is no downloadable file, and
+ * inventing one is how a Dataset becomes a lie about what is available.
+ */
+export function buildGrantDatasetSchema(
+  grant: GrantDetail,
+  identity: SiteIdentity,
+): JsonLdObject {
+  const url = absolute(routes.grant(grant.slug), identity.url);
+  const ids = grantIds(url);
+
+  // Only the fields this record actually carries a value for.
+  const measured = [
+    grant.minimumAmount !== null ? "Minimum award" : null,
+    grant.maximumAmount !== null ? "Maximum award" : null,
+    grant.opensAt !== null ? "Opening date" : null,
+    grant.closesAt !== null ? "Closing date" : null,
+    grant.eligibility !== null ? "Eligibility criteria" : null,
+    "Funding agency",
+    "Geographic scope",
+  ].filter((entry): entry is string => entry !== null);
+
+  const spatial =
+    grant.state === null
+      ? grant.country.name
+      : `${grant.state.name}, ${grant.country.name}`;
+
+  return compact({
+    "@context": CONTEXT,
+    "@type": "Dataset",
+    "@id": ids.dataset,
+    name: grant.title,
+    description: grantDescription(grant),
+    url,
+    identifier: grant.slug,
+    about: { "@id": ids.grant },
+    creator: funderNode(grant, identity.url),
+    publisher: { "@id": organizationId(identity.url) },
+    includedInDataCatalog: {
+      "@type": "DataCatalog",
+      name: `${identity.name} grants database`,
+      url: absolute(routes.grants, identity.url),
+    },
+    // The record was transcribed from a specific notice. This is the single
+    // most honest thing a Dataset can say about a compiled record.
+    isBasedOn: grant.officialUrl,
+    spatialCoverage: spatial,
+    variableMeasured: measured,
+    keywords: grant.categories.map((category) => category.name),
+    datePublished: grant.publishedAt,
+    dateModified: grant.updatedAt,
+    inLanguage: "en",
+  });
+}
+
+/**
+ * The page itself — the node that ties the others together.
+ *
+ * Carries no rich result of its own. It exists so `isPartOf`, `about` and
+ * `breadcrumb` resolve to something, which is what turns four separate scripts
+ * into one connected graph.
+ */
+export function buildGrantWebPageSchema(
+  grant: GrantDetail,
+  identity: SiteIdentity,
+): JsonLdObject {
+  const url = absolute(routes.grant(grant.slug), identity.url);
+  const ids = grantIds(url);
+
+  return compact({
+    "@context": CONTEXT,
+    "@type": "WebPage",
+    "@id": ids.webpage,
+    url,
+    name: grant.title,
+    description: grantDescription(grant),
+    isPartOf: { "@id": webSiteId(identity.url) },
+    about: { "@id": ids.grant },
+    breadcrumb: { "@id": ids.breadcrumb },
+    inLanguage: "en",
+    datePublished: grant.publishedAt,
+    dateModified: grant.updatedAt,
+  });
+}
+
+/** A page-scoped BreadcrumbList, addressable so `WebPage.breadcrumb` resolves. */
+export function buildGrantBreadcrumbSchema(
+  trail: readonly BreadcrumbEntry[],
+  grant: GrantDetail,
+  identity: SiteIdentity,
+): JsonLdObject {
+  const url = absolute(routes.grant(grant.slug), identity.url);
+
+  return {
+    ...buildBreadcrumbSchema(trail, identity.url),
+    "@id": grantIds(url).breadcrumb,
+  };
 }
 
 export interface CollectionEntry {

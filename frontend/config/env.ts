@@ -91,6 +91,33 @@ export const clientEnv: ClientEnv = parseOrThrow(
 );
 
 /**
+ * A production deployment still pointing at localhost is quietly catastrophic.
+ *
+ * `NEXT_PUBLIC_SITE_URL` feeds `metadataBase`, so it becomes every canonical
+ * tag, every `og:url`, every JSON-LD `@id`, the sitemap and robots.txt. Left at
+ * its `.env.example` default it tells search engines the entire catalogue lives
+ * on a machine they cannot reach — while the site itself renders perfectly and
+ * no build, test or lint fails.
+ *
+ * Keyed on Vercel's own environment rather than NODE_ENV, which is also
+ * "production" for a local `next build` and would break that for no reason.
+ */
+if (process.env.VERCEL_ENV === "production") {
+  const { hostname } = new URL(clientEnv.NEXT_PUBLIC_SITE_URL);
+
+  if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]") {
+    throw new Error(
+      `NEXT_PUBLIC_SITE_URL is "${clientEnv.NEXT_PUBLIC_SITE_URL}" in a production deployment.\n\n` +
+        `Canonical URLs, og:url, JSON-LD, the sitemap and robots.txt are all built from it, so ` +
+        `this would publish the site telling search engines it lives on localhost.\n\n` +
+        `Set it to the public origin in the Vercel project's environment variables (Production ` +
+        `scope), then redeploy — NEXT_PUBLIC_* values are inlined at build time, so changing the ` +
+        `variable without a rebuild does not update an existing deployment.`,
+    );
+  }
+}
+
+/**
  * Server-only secrets. Never import this from a Client Component — doing so
  * would pull the Supabase secret key into the browser bundle.
  */

@@ -1,0 +1,980 @@
+<title>Grant Ninja Admin Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+
+<style>
+  :root {
+    --ground:      #ffffff;
+    --panel:       #f4f7fa;
+    --panel-edge:  #e4ebf2;
+    --ink:         #12212e;
+    --ink-soft:    #4e6070;
+    --ink-faint:   #7d8d9b;
+    --rule:        #d5dfe8;
+    --accent:      #104577;
+    --accent-ink:  #0c3459;
+    --accent-soft: #e3edf6;
+    --warn:        #8a5a00;
+    --warn-soft:   #fdf4e0;
+    --danger:      #a11f2c;
+    --danger-soft: #fbecec;
+    --good:        #1c6b47;
+    --good-soft:   #e6f2eb;
+
+    --step: 1.5rem;
+    --measure: 68ch;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #0d1620;
+      --panel:       #14202c;
+      --panel-edge:  #223141;
+      --ink:         #e4ecf3;
+      --ink-soft:    #9fb2c2;
+      --ink-faint:   #71879a;
+      --rule:        #24333f;
+      --accent:      #6fa8dc;
+      --accent-ink:  #a8cbe8;
+      --accent-soft: #16293c;
+      --warn:        #e0aa4e;
+      --warn-soft:   #2a2013;
+      --danger:      #ef8a92;
+      --danger-soft: #2c1618;
+      --good:        #6cc39a;
+      --good-soft:   #12271d;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #0d1620;
+    --panel:       #14202c;
+    --panel-edge:  #223141;
+    --ink:         #e4ecf3;
+    --ink-soft:    #9fb2c2;
+    --ink-faint:   #71879a;
+    --rule:        #24333f;
+    --accent:      #6fa8dc;
+    --accent-ink:  #a8cbe8;
+    --accent-soft: #16293c;
+    --warn:        #e0aa4e;
+    --warn-soft:   #2a2013;
+    --danger:      #ef8a92;
+    --danger-soft: #2c1618;
+    --good:        #6cc39a;
+    --good-soft:   #12271d;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .shell {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 6rem;
+    display: grid;
+    gap: 3rem;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 1000px) {
+    .shell {
+      grid-template-columns: 210px minmax(0, 1fr);
+      gap: 4rem;
+      padding-top: 4.5rem;
+    }
+  }
+
+  /* ---- contents rail ---- */
+  nav.toc { font-size: 0.86rem; }
+
+  @media (min-width: 1000px) {
+    nav.toc {
+      position: sticky;
+      top: 2.5rem;
+      align-self: start;
+      max-height: calc(100dvh - 5rem);
+      overflow-y: auto;
+    }
+  }
+
+  nav.toc h2 {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 0.9rem;
+  }
+
+  nav.toc ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    border-left: 2px solid var(--rule);
+  }
+
+  nav.toc a {
+    display: block;
+    padding: 0.1rem 0 0.1rem 0.85rem;
+    margin-left: -2px;
+    border-left: 2px solid transparent;
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+
+  nav.toc a:hover,
+  nav.toc a:focus-visible {
+    color: var(--accent);
+    border-left-color: var(--accent);
+  }
+
+  main { max-width: var(--measure); }
+
+  /* ---- masthead ---- */
+  .masthead { margin-bottom: 3.5rem; }
+
+  .eyebrow {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.9rem;
+  }
+
+  h1 {
+    font-family: "Newsreader", Georgia, serif;
+    font-size: clamp(2.3rem, 5vw, 3.1rem);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    margin: 0 0 1rem;
+  }
+
+  .standfirst {
+    font-size: 1.14rem;
+    color: var(--ink-soft);
+    margin: 0;
+    text-wrap: pretty;
+  }
+
+  /* ---- sections ---- */
+  section { margin-top: 3.75rem; scroll-margin-top: 2rem; }
+
+  h2 {
+    font-family: "Newsreader", Georgia, serif;
+    font-size: 1.72rem;
+    font-weight: 600;
+    line-height: 1.22;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0 0 0.5rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  h3 {
+    font-family: "Newsreader", Georgia, serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 2.25rem 0 0.5rem;
+  }
+
+  p { margin: 0 0 1.05rem; text-wrap: pretty; }
+
+  a { color: var(--accent); text-underline-offset: 2px; }
+
+  strong { font-weight: 600; }
+
+  code {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.85em;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    padding: 0.12em 0.38em;
+    border-radius: 3px;
+  }
+
+  /* ---- ordered procedures: numbering is real sequence ---- */
+  ol.steps {
+    list-style: none;
+    counter-reset: step;
+    margin: 1.5rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.35rem;
+  }
+
+  ol.steps > li {
+    counter-increment: step;
+    position: relative;
+    padding-left: 2.9rem;
+  }
+
+  ol.steps > li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0.05rem;
+    width: 1.95rem;
+    height: 1.95rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  ol.steps > li > p:last-child { margin-bottom: 0; }
+
+  ul.plain {
+    margin: 0 0 1.05rem;
+    padding-left: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  /* ---- tables ---- */
+  .scroller {
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    border: 1px solid var(--panel-edge);
+    border-radius: 6px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.93rem;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+
+  thead th {
+    background: var(--panel);
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+
+  /* ---- required / optional pills ---- */
+  .pill {
+    display: inline-block;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.64rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.18em 0.5em;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+
+  .pill.req      { background: var(--danger-soft); color: var(--danger); }
+  .pill.pub      { background: var(--warn-soft);   color: var(--warn); }
+  .pill.opt      { background: var(--panel);       color: var(--ink-faint); }
+  .pill.auto     { background: var(--good-soft);   color: var(--good); }
+
+  /* ---- callouts ---- */
+  .note {
+    margin: 1.5rem 0;
+    padding: 1rem 1.15rem;
+    border-radius: 6px;
+    border-left: 3px solid var(--accent);
+    background: var(--panel);
+    font-size: 0.95rem;
+  }
+
+  .note > :last-child { margin-bottom: 0; }
+
+  .note.caution { border-left-color: var(--warn);   background: var(--warn-soft); }
+  .note.stop    { border-left-color: var(--danger); background: var(--danger-soft); }
+
+  .note-label {
+    display: block;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 0.35rem;
+    color: var(--ink-soft);
+  }
+
+  .note.caution .note-label { color: var(--warn); }
+  .note.stop .note-label    { color: var(--danger); }
+
+  /* ---- country cards ---- */
+  .countries {
+    display: grid;
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+
+  @media (min-width: 700px) {
+    .countries { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  .country {
+    border: 1px solid var(--panel-edge);
+    border-radius: 6px;
+    padding: 1.1rem;
+    background: var(--panel);
+  }
+
+  .country h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.05rem;
+  }
+
+  .country dl {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    font-size: 0.88rem;
+  }
+
+  .country dt {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.63rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .country dd { margin: 0.1rem 0 0; }
+
+  footer {
+    margin-top: 4.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.88rem;
+    color: var(--ink-faint);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+
+  html { scroll-behavior: smooth; }
+</style>
+
+<div class="shell">
+  <nav class="toc" aria-label="Contents">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#find">Finding the right page</a></li>
+      <li><a href="#add">Adding a grant</a></li>
+      <li><a href="#edit">Editing a grant</a></li>
+      <li><a href="#delete">Deleting a grant</a></li>
+      <li><a href="#countries">USA, UK and Italy</a></li>
+      <li><a href="#fields">Field reference</a></li>
+      <li><a href="#after">After you save</a></li>
+      <li><a href="#seo">Checking the SEO data</a></li>
+      <li><a href="#trouble">If something goes wrong</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="masthead">
+      <p class="eyebrow">Grant Ninja · Admin</p>
+      <h1>Adding and managing grants by hand</h1>
+      <p class="standfirst">
+        Most grants arrive automatically, collected from government websites by the crawler. This
+        guide covers the other kind — the ones you enter yourself, for countries and programmes
+        the crawler cannot reach.
+      </p>
+    </header>
+
+    <section id="find">
+      <h2>Finding the right page</h2>
+      <p>
+        Everything in this guide happens in the admin panel, under <strong>Grants</strong> in the
+        left-hand menu. You need to be signed in as an editor or an administrator.
+      </p>
+      <div class="scroller">
+        <table>
+          <thead>
+            <tr><th>To do this</th><th>Go here</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Add a new grant</td><td>Grants → <strong>Add a grant</strong> (top right)</td></tr>
+            <tr><td>Change an existing grant</td><td>Grants → click the grant's title</td></tr>
+            <tr><td>Remove a grant</td><td>Grants → click the title → <strong>Delete</strong> (top right)</td></tr>
+            <tr><td>See what is waiting for a decision</td><td>Grants → <strong>Needs review</strong> tab</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The steps are the same for every country. What changes between the USA, the UK and Italy is
+        covered in <a href="#countries">one section further down</a> rather than repeated three
+        times — the form does not behave differently, it just offers different choices.
+      </p>
+    </section>
+
+    <section id="add">
+      <h2>Adding a grant</h2>
+      <p>
+        You will need the grant's official page open in another tab. Everything you enter should
+        come from that page.
+      </p>
+
+      <ol class="steps">
+        <li>
+          <p><strong>Go to Grants and press "Add a grant".</strong></p>
+        </li>
+        <li>
+          <p><strong>Choose the country first.</strong></p>
+          <p>
+            This has to come first because it decides everything below it: which agencies you can
+            pick, which regions exist, and which currency the awards are recorded in. The currency
+            appears under the field so you can check it — USD for the United States, GBP for the
+            United Kingdom, EUR for Italy.
+          </p>
+        </li>
+        <li>
+          <p><strong>Choose the funding agency.</strong></p>
+          <p>
+            The list only shows agencies for the country you picked. If the agency is not there —
+            which will be the case for most UK and Italian grants at first — choose
+            <strong>"+ Add a new agency…"</strong> and type its full official name. You can add its
+            website too, though that is optional.
+          </p>
+          <p>
+            Type the name carefully. It becomes a page on the public site, and every grant you file
+            under it afterwards will use the same entry.
+          </p>
+        </li>
+        <li>
+          <p><strong>Set the funding level.</strong></p>
+          <p>
+            Three choices: national government, regional or local government, or a foundation or
+            private funder. This is what drives the federal / state / private filter on the public
+            site, so getting it wrong makes the grant hard to find rather than invisible.
+          </p>
+        </li>
+        <li>
+          <p><strong>Tick at least one category.</strong></p>
+          <p>
+            The first one you tick becomes the <strong>primary</strong> category — the one shown in
+            the breadcrumb trail on the grant's page. You can change which is primary by pressing
+            "make primary" next to another ticked category.
+          </p>
+        </li>
+        <li>
+          <p><strong>Write the title and descriptions.</strong></p>
+          <p>
+            Use the official title. Write the descriptions in your own words rather than pasting the
+            whole notice — a summary you wrote is more useful to a reader and avoids duplicating the
+            agency's page.
+          </p>
+        </li>
+        <li>
+          <p><strong>Enter the award amounts and dates.</strong></p>
+          <p>
+            Leave anything the notice does not state empty. An empty field reads as "not published";
+            a zero reads as "this grant awards nothing".
+          </p>
+        </li>
+        <li>
+          <p><strong>Paste the official URL.</strong></p>
+          <p>
+            The agency's own page for this grant. This is required before the grant can go live — it
+            is how a reader checks us, and it is the link the page points them to.
+          </p>
+        </li>
+        <li>
+          <p><strong>Choose a status and press "Create grant".</strong></p>
+          <p>
+            <strong>Draft</strong> saves it without publishing — use this if you are part-way
+            through. <strong>Pending review</strong> queues it for someone to check.
+            <strong>Published</strong> puts it on the public site straight away.
+          </p>
+        </li>
+      </ol>
+
+      <div class="note">
+        <span class="note-label">Good to know</span>
+        <p>
+          You do not choose the web address. It is generated from the title, and made unique
+          automatically if another grant already has that name.
+        </p>
+      </div>
+
+      <div class="note caution">
+        <span class="note-label">If the form will not save</span>
+        <p>
+          Two rules are enforced when you choose <strong>Published</strong>: there must be an
+          official URL, and at least one category. If either is missing you will see a message next
+          to the field. Save it as a draft instead, fill in what is missing, then publish.
+        </p>
+      </div>
+    </section>
+
+    <section id="edit">
+      <h2>Editing a grant</h2>
+      <p>
+        Open <strong>Grants</strong>, find the grant and click its title. The page is split into
+        parts, and each saves on its own.
+      </p>
+
+      <div class="scroller">
+        <table>
+          <thead>
+            <tr><th>Part of the page</th><th>What it changes</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Decision</strong></td>
+              <td>Publish, unpublish or archive the grant</td>
+            </tr>
+            <tr>
+              <td><strong>Filing</strong></td>
+              <td>Country, agency, region, funding level and categories</td>
+            </tr>
+            <tr>
+              <td><strong>Details</strong></td>
+              <td>Title, descriptions, eligibility, amounts, dates and links</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ol class="steps">
+        <li>
+          <p><strong>Change what you need to, in the relevant part.</strong></p>
+          <p>
+            Correcting a deadline is a "Details" change. Moving a grant to the right ministry is a
+            "Filing" change. They are separate because they are different kinds of decision, and
+            each is recorded separately in the history.
+          </p>
+        </li>
+        <li>
+          <p><strong>Write a short reason.</strong></p>
+          <p>
+            Optional, but it is what makes the history readable in six months. "Corrected the closing
+            date from the notice" tells the next person what happened; a blank does not.
+          </p>
+        </li>
+        <li>
+          <p><strong>Press Save.</strong></p>
+          <p>
+            Each part has its own save button and only saves its own fields. If you changed both the
+            filing and the details, press both.
+          </p>
+        </li>
+      </ol>
+
+      <div class="note">
+        <span class="note-label">Nothing is lost</span>
+        <p>
+          Every save keeps a full copy of what the grant looked like beforehand, along with who
+          changed it and when. You can see the trail under <strong>History</strong> at the bottom of
+          the page.
+        </p>
+      </div>
+
+      <div class="note caution">
+        <span class="note-label">Changing the country</span>
+        <p>
+          Changing a grant's country clears the agency and region, because neither exists in the new
+          country. You will need to pick them again before you can save.
+        </p>
+      </div>
+    </section>
+
+    <section id="delete">
+      <h2>Deleting a grant</h2>
+      <p>
+        Open the grant and press <strong>Delete</strong> at the top right. You will be asked to
+        confirm, and to give a reason.
+      </p>
+      <p>What happens: the grant disappears from the public site, from search results on the site,
+        and from the sitemap that search engines read. The record itself is kept, along with its
+        full history.</p>
+
+      <div class="note">
+        <span class="note-label">This can be undone</span>
+        <p>
+          Because the record is kept rather than destroyed, an administrator can restore a grant
+          deleted by mistake. Ask your developer — it is not something the panel does on its own.
+        </p>
+      </div>
+
+      <div class="note caution">
+        <span class="note-label">Consider archiving instead</span>
+        <p>
+          If a grant has simply closed, <strong>Archive</strong> is the better choice. It also
+          removes the grant from public view, but it says "this programme ended" rather than "this
+          should not have been here". Delete is for genuine mistakes and duplicates.
+        </p>
+      </div>
+
+      <p>Deleting requires the administrator role. Editors can archive but not delete.</p>
+    </section>
+
+    <section id="countries">
+      <h2>USA, UK and Italy</h2>
+      <p>
+        Adding, editing and deleting work identically in all three. The differences are only in what
+        you will find waiting for you in the dropdowns.
+      </p>
+
+      <div class="countries">
+        <div class="country">
+          <h3>United States</h3>
+          <dl>
+            <dt>Currency</dt>
+            <dd>USD, set automatically</dd>
+            <dt>Agencies</dt>
+            <dd>Around 150 already listed, collected from Grants.gov. Yours is probably there.</dd>
+            <dt>Region field</dt>
+            <dd>Shown. Choose a state, or leave it on "Whole country" for a federal programme.</dd>
+            <dt>Funding level</dt>
+            <dd>"National government" for a federal grant; "State, regional or local" for a state one.</dd>
+          </dl>
+        </div>
+
+        <div class="country">
+          <h3>United Kingdom</h3>
+          <dl>
+            <dt>Currency</dt>
+            <dd>GBP, set automatically</dd>
+            <dt>Agencies</dt>
+            <dd>None yet. Use "+ Add a new agency" — e.g. Innovate UK, UKRI, or the relevant department.</dd>
+            <dt>Region field</dt>
+            <dd>Hidden, because no UK regions are recorded. Grants apply UK-wide.</dd>
+            <dt>Funding level</dt>
+            <dd>"National government" for anything from a UK department or research council.</dd>
+          </dl>
+        </div>
+
+        <div class="country">
+          <h3>Italy</h3>
+          <dl>
+            <dt>Currency</dt>
+            <dd>EUR, set automatically</dd>
+            <dt>Agencies</dt>
+            <dd>None yet. Use "+ Add a new agency" — e.g. Ministero dell'Università e della Ricerca.</dd>
+            <dt>Region field</dt>
+            <dd>Hidden, because no Italian regions are recorded. Grants apply nationally.</dd>
+            <dt>Funding level</dt>
+            <dd>"National government" for a ministry; "Foundation or private funder" for a fondazione.</dd>
+          </dl>
+        </div>
+      </div>
+
+      <div class="note">
+        <span class="note-label">The first grant is the slow one</span>
+        <p>
+          For the UK and Italy you will create the agency the first time you add a grant. Every grant
+          after that can simply pick it from the list.
+        </p>
+      </div>
+
+      <p>
+        Nothing here is limited to these three countries. Any country in the list works the same way,
+        and adding a new one is a small job for your developer rather than a rebuild.
+      </p>
+    </section>
+
+    <section id="fields">
+      <h2>Field reference</h2>
+      <p>
+        <span class="pill req">required</span> must be filled in to save at all &nbsp;
+        <span class="pill pub">to publish</span> only required when publishing &nbsp;
+        <span class="pill opt">optional</span> &nbsp;
+        <span class="pill auto">automatic</span>
+      </p>
+
+      <div class="scroller">
+        <table>
+          <thead>
+            <tr><th>Field</th><th></th><th>How to fill it in</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Country</strong></td>
+              <td><span class="pill req">required</span></td>
+              <td>Pick first. Sets the currency and filters the agency and region lists.</td>
+            </tr>
+            <tr>
+              <td><strong>Funding agency</strong></td>
+              <td><span class="pill req">required</span></td>
+              <td>Choose an existing one, or "+ Add a new agency" and type the full official name.</td>
+            </tr>
+            <tr>
+              <td><strong>Title</strong></td>
+              <td><span class="pill req">required</span></td>
+              <td>The official name of the grant. Three characters minimum.</td>
+            </tr>
+            <tr>
+              <td><strong>Categories</strong></td>
+              <td><span class="pill pub">to publish</span></td>
+              <td>At least one. The first ticked becomes the primary.</td>
+            </tr>
+            <tr>
+              <td><strong>Official URL</strong></td>
+              <td><span class="pill pub">to publish</span></td>
+              <td>The agency's own page for this grant. Must start with <code>https://</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>Funding level</strong></td>
+              <td><span class="pill opt">optional</span></td>
+              <td>National, regional or private. Defaults to national.</td>
+            </tr>
+            <tr>
+              <td><strong>State or region</strong></td>
+              <td><span class="pill opt">optional</span></td>
+              <td>Only appears where the country has regions recorded. Leave on "Whole country" otherwise.</td>
+            </tr>
+            <tr>
+              <td><strong>Short description</strong></td>
+              <td><span class="pill opt">optional</span></td>
+              <td>One or two sentences. This is what appears on cards and in search results.</td>
+            </tr>
+            <tr>
+              <td><strong>Full description</strong></td>
+              <td><span class="pill opt">optional</span></td>
+              <td>The detail. Write it rather than pasting the notice wholesale.</td>
+            </tr>
+            <tr>
+              <td><strong>Eligibility</strong></td>
+              <td><span class="pill opt">optional</span></td>
+              <td>Who can apply. Readers look for this before anything else.</td>
+            </tr>
+            <tr>
+              <td><strong>Minimum / maximum award</strong></td>
+              <td><span class="pill opt">optional</span></td>
+              <td>Numbers only, no currency symbol or commas. Leave empty if unstated — do not enter 0. The minimum cannot exceed the maximum.</td>
+            </tr>
+            <tr>
+              <td><strong>Opens / Closes</strong></td>
+              <td><span class="pill opt">optional</span></td>
+              <td>Use the date picker. Closes cannot come before Opens. Leave Closes empty for a rolling programme.</td>
+            </tr>
+            <tr>
+              <td><strong>Application URL</strong></td>
+              <td><span class="pill opt">optional</span></td>
+              <td>Only if applying happens somewhere other than the official page.</td>
+            </tr>
+            <tr>
+              <td><strong>Web address</strong></td>
+              <td><span class="pill auto">automatic</span></td>
+              <td>Built from the title and made unique. You do not set it.</td>
+            </tr>
+            <tr>
+              <td><strong>Currency</strong></td>
+              <td><span class="pill auto">automatic</span></td>
+              <td>Taken from the country.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note caution">
+        <span class="note-label">Dates matter more than anything else here</span>
+        <p>
+          A wrong closing date is the one error that actively harms someone — they plan around it and
+          miss the real deadline. Check it against the official notice before you publish, not after.
+        </p>
+      </div>
+    </section>
+
+    <section id="after">
+      <h2>After you save</h2>
+      <p>Saving a grant as <strong>Published</strong> sets off several things at once:</p>
+      <ul class="plain">
+        <li>The grant appears on the public site at its own address.</li>
+        <li>It joins the listings for its country, category and agency, and their counts go up.</li>
+        <li>It becomes findable through search and the filters.</li>
+        <li>It is added to the sitemap that search engines read.</li>
+        <li>Its structured data is generated automatically — you do not enter any of it.</li>
+      </ul>
+
+      <h3>Checking it worked</h3>
+      <ol class="steps">
+        <li>
+          <p>From the grant's page in the admin panel, note the title.</p>
+        </li>
+        <li>
+          <p>
+            Open the public site and search for it, or go to <strong>Browse grants</strong> and
+            filter by its country.
+          </p>
+        </li>
+        <li>
+          <p>
+            Open the grant and check the four things a reader acts on: the award, the closing date,
+            who can apply, and that the "Read the official notice" link goes where it should.
+          </p>
+        </li>
+      </ol>
+
+      <div class="note">
+        <span class="note-label">If it is not there yet</span>
+        <p>
+          Pages are cached for a short period. If a change does not show immediately, refresh once
+          after a minute. If it still is not there, check the status is <strong>Published</strong>
+          rather than Draft — that is the usual explanation.
+        </p>
+      </div>
+    </section>
+
+    <section id="seo">
+      <h2>Checking the SEO data</h2>
+      <p>
+        Every published grant automatically carries structured data — the machine-readable summary
+        search engines use to understand the page. It is generated from what you typed, so there is
+        nothing extra to fill in. Checking it is worth doing once for a new grant.
+      </p>
+
+      <ol class="steps">
+        <li>
+          <p>
+            Open <a href="https://search.google.com/test/rich-results" target="_blank" rel="noopener noreferrer">Google's Rich Results Test</a>.
+          </p>
+        </li>
+        <li>
+          <p>Paste the grant's public web address and press Test URL.</p>
+        </li>
+        <li>
+          <p>
+            Wait for it to finish, then look at what it detected. You should see several items
+            listed, including a breadcrumb trail and the grant itself.
+          </p>
+        </li>
+      </ol>
+
+      <div class="scroller">
+        <table>
+          <thead>
+            <tr><th>What you might see</th><th>What it means</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Items detected, no errors</td>
+              <td>Working as intended.</td>
+            </tr>
+            <tr>
+              <td>"Not eligible for rich results"</td>
+              <td>Normal, and not a fault. It means Google will not draw a special box in search results for that type. The data is still valid and still read.</td>
+            </tr>
+            <tr>
+              <td>A warning about a missing field</td>
+              <td>Usually a field left empty on the grant — an image, or a date. Fill it in if the official notice gives you one; leave it if it does not.</td>
+            </tr>
+            <tr>
+              <td>An error, or nothing detected</td>
+              <td>Worth reporting. Send the grant's address to your developer.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <span class="note-label">Draft grants cannot be tested</span>
+        <p>
+          The test fetches the live page, so a grant has to be published before it will find
+          anything. A draft returns "page not found", which is correct rather than broken.
+        </p>
+      </div>
+    </section>
+
+    <section id="trouble">
+      <h2>If something goes wrong</h2>
+
+      <div class="scroller">
+        <table>
+          <thead>
+            <tr><th>What you see</th><th>What to do</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>"A published grant needs an official URL"</td>
+              <td>Paste the agency's page for the grant into Official URL, or save it as a draft instead.</td>
+            </tr>
+            <tr>
+              <td>"A published grant needs at least one category"</td>
+              <td>Tick a category. If none fit, use "Others".</td>
+            </tr>
+            <tr>
+              <td>"The closing date cannot come before the opening date"</td>
+              <td>One of the two dates is wrong. Check both against the notice.</td>
+            </tr>
+            <tr>
+              <td>"Choose an existing agency or enter a new one"</td>
+              <td>You picked "+ Add a new agency" but left the name blank.</td>
+            </tr>
+            <tr>
+              <td>The agency dropdown is empty</td>
+              <td>Expected for a country with no agencies yet. Use "+ Add a new agency".</td>
+            </tr>
+            <tr>
+              <td>"Not authorised"</td>
+              <td>Deleting needs the administrator role. Ask an administrator, or archive instead.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note stop">
+        <span class="note-label">One thing not to do</span>
+        <p>
+          Do not re-enter a grant that already exists to fix a mistake in it. Edit the existing one.
+          Creating a second copy leaves two pages competing for the same search results, and the
+          older one keeps its links.
+        </p>
+      </div>
+    </section>
+
+    <footer>
+      <p>
+        Grant Ninja admin manual. Covers manual grant entry for all countries in the system.
+        Grants collected automatically by the crawler are edited the same way.
+      </p>
+    </footer>
+  </main>
+</div>

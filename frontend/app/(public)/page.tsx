@@ -13,31 +13,45 @@ import { siteConfig } from "@/config/site";
 import { GrantCard } from "@/features/grants/components/grant-card";
 import { GrantSearchField } from "@/features/grants/components/grant-search-field";
 import { listGrants } from "@/features/grants/services/grant-service";
-import { buildFaqSchema } from "@/features/seo/lib/json-ld";
+import { buildFaqSchema, buildHomePageSchema } from "@/features/seo/lib/json-ld";
 import { getStaticPageFaqs } from "@/features/shared/services/faq-service";
 import {
   getStatistics,
   listCategoriesWithGrants,
   listCountriesWithGrants,
 } from "@/features/shared/services/reference-service";
+import { getSiteIdentity } from "@/features/shared/services/settings-service";
 
 export const metadata: Metadata = {
   alternates: { canonical: routes.home },
 };
 
 export default async function HomePage() {
-  const [statistics, closingSoon, countries, categories, faqs] = await Promise.all([
+  const [statistics, closingSoon, countries, categories, faqs, identity] = await Promise.all([
     getStatistics(),
     listGrants({ page: 1, pageSize: 4, sort: "closing_soon" }),
     listCountriesWithGrants(),
     listCategoriesWithGrants(),
     getStaticPageFaqs("home"),
+    getSiteIdentity(),
   ]);
 
   return (
     <>
-      {/* Only the FAQ block: Organization and WebSite are emitted site-wide. */}
-      <JsonLd schemas={[buildFaqSchema(faqs)]} />
+      {/*
+        WebPage and the FAQ block. Organization and WebSite are emitted site-wide
+        in the root layout and referenced here by @id, so the home page adds no
+        second definition of either.
+
+        No BreadcrumbList: a trail with one entry describes nothing, and Google
+        ignores single-item breadcrumbs.
+      */}
+      <JsonLd
+        schemas={[
+          buildHomePageSchema(identity, { hasFaq: faqs.length > 0 }),
+          buildFaqSchema(faqs, `${identity.url}#faq`),
+        ]}
+      />
 
       {/*
         The hero leads with search rather than a headline and a picture.

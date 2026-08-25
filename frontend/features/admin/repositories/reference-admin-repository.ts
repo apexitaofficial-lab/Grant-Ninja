@@ -42,6 +42,13 @@ export interface AdminAgency {
   readonly countryName: string;
 }
 
+/** A pickable reference row, scoped to the country it belongs to. */
+export interface ReferenceOption {
+  readonly id: string;
+  readonly name: string;
+  readonly countryId: string;
+}
+
 type Embedded<T> = T | T[] | null;
 
 function toOne<T>(value: Embedded<T>): T | null {
@@ -109,6 +116,51 @@ export class ReferenceAdminRepository extends BaseRepository {
       status: row.status,
       grantCount: row.grant_count,
     }));
+  }
+
+  /**
+   * Every agency and state as a flat option list, each tagged with its country.
+   *
+   * Loaded whole rather than fetched per country. Both sets are small — around
+   * 150 agencies and 52 states — and shipping them once lets the grant form
+   * narrow the agency list the instant the country changes, instead of showing
+   * a spinner between two dropdowns that depend on each other.
+   */
+  async listGrantFormOptions(): Promise<{
+    readonly agencies: readonly ReferenceOption[];
+    readonly states: readonly ReferenceOption[];
+  }> {
+    const supabase = await createSupabaseServerClient();
+
+    const [agencies, states] = await Promise.all([
+      supabase
+        .from("organizations")
+        .select("id, name, country_id")
+        .is("deleted_at", null)
+        .order("name", { ascending: true }),
+      supabase
+        .from("states")
+        .select("id, name, country_id")
+        .order("name", { ascending: true }),
+    ]);
+
+    if (agencies.error) {
+      this.unwrap({ data: null, error: agencies.error }, "listGrantFormOptions");
+    }
+
+    if (states.error) {
+      this.unwrap({ data: null, error: states.error }, "listGrantFormOptions");
+    }
+
+    const toOptions = (
+      rows: readonly { id: string; name: string; country_id: string }[],
+    ): readonly ReferenceOption[] =>
+      rows.map((row) => ({ id: row.id, name: row.name, countryId: row.country_id }));
+
+    return {
+      agencies: toOptions(agencies.data ?? []),
+      states: toOptions(states.data ?? []),
+    };
   }
 
   /**

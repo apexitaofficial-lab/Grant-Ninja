@@ -66,6 +66,8 @@ export const routes = {
   admin: {
     root: "/admin",
     grants: "/admin/grants",
+    newGrant: "/admin/grants/new",
+    grant: (id: string) => `/admin/grants/${id}`,
     categories: "/admin/categories",
     countries: "/admin/countries",
     agencies: "/admin/agencies",
