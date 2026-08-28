@@ -43,9 +43,16 @@ Environment=PYTHONUNBUFFERED=1
 # without ever failing a run. Pointing it at the directory ReadWritePaths
 # already grants keeps the sandbox intact and the engine working.
 Environment=CRAWL4AI_BASE_DIRECTORY=/srv/grant-ninja/python
-# Playwright's browsers are installed per-user; naming the path here means the
-# engine finds them regardless of what HOME resolves to under the sandbox.
-Environment=PLAYWRIGHT_BROWSERS_PATH=/srv/grant-ninja/python/.playwright
+
+# Chromium lives in the service user's own cache. Stated explicitly rather than
+# left to resolve from HOME, because the browsers were originally installed as
+# root — into /root/.cache, which ProtectHome=true then hid from the service, so
+# the engine was looking for an executable it could never see. Named here, the
+# path cannot drift with whatever HOME happens to be.
+#
+# Not in ReadWritePaths on purpose: a browser only needs to be read. Chromium's
+# own scratch space goes to the private /tmp that PrivateTmp provides.
+Environment=PLAYWRIGHT_BROWSERS_PATH=/srv/grant-ninja/.cache/ms-playwright
 ExecStart=/srv/grant-ninja/python/.venv/bin/python -m app.worker
 
 # A crawl in flight holds an open run row. SIGTERM asks the worker to finish
@@ -70,7 +77,7 @@ PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
 # Playwright writes browser profiles and Loguru writes rotating log files.
-ReadWritePaths=/srv/grant-ninja/python/logs /srv/grant-ninja/python/.crawl4ai /srv/grant-ninja/python/.playwright
+ReadWritePaths=/srv/grant-ninja/python/logs /srv/grant-ninja/python/.crawl4ai
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
