@@ -48,7 +48,7 @@ const LIST_COLUMNS_BY_CATEGORY = `
 const DETAIL_COLUMNS = `
   ${LIST_COLUMNS},
   full_description, eligibility, official_url, application_url,
-  published_at, last_verified_at, updated_at,
+  published_at, last_verified_at, updated_at, current_version,
   ai_content:grant_ai_content ( summary ),
   capsules:grant_answer_capsules ( question, answer, position ),
   documents:grant_documents ( title, file_url, document_type, sort_order )
@@ -112,6 +112,7 @@ interface RawDetailRow extends RawListRow {
   readonly published_at: string | null;
   readonly last_verified_at: string | null;
   readonly updated_at: string;
+  readonly current_version: number;
   readonly ai_content: Embedded<{ readonly summary: string | null }>;
   readonly capsules:
     | readonly { readonly question: string; readonly answer: string; readonly position: number }[]
@@ -182,6 +183,7 @@ function toDetail(row: RawDetailRow): GrantDetail {
     publishedAt: row.published_at,
     lastVerifiedAt: row.last_verified_at,
     updatedAt: row.updated_at,
+    version: row.current_version,
     summary: toOne(row.ai_content)?.summary ?? null,
     answerCapsules: (row.capsules ?? [])
       .slice()

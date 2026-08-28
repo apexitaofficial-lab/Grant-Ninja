@@ -9,7 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { saveGrantClassification } from "@/features/admin/actions/grant-actions";
 import type { GrantReferenceData } from "@/features/admin/components/grant-classification-fields";
-import { GrantClassificationFields } from "@/features/admin/components/grant-classification-fields";
+import {
+  GrantClassificationFields,
+  NEW_AGENCY,
+} from "@/features/admin/components/grant-classification-fields";
 import type { AdminGrantDetail } from "@/features/admin/repositories/grant-admin-repository";
 import type { FundingLevel } from "@/features/admin/schemas/grant-edit-schema";
 import { fromFundingFlags } from "@/features/admin/schemas/grant-edit-schema";
@@ -34,6 +37,8 @@ export function GrantClassificationEditor({
 
   const [countryId, setCountryId] = useState(grant.countryId);
   const [organizationId, setOrganizationId] = useState(grant.organizationId);
+  const [newAgencyName, setNewAgencyName] = useState("");
+  const [newAgencyWebsite, setNewAgencyWebsite] = useState("");
   const [stateId, setStateId] = useState(grant.stateId ?? "");
   const [fundingLevel, setFundingLevel] = useState<FundingLevel>(
     fromFundingFlags(grant.isFederal, grant.isPrivate),
@@ -72,16 +77,34 @@ export function GrantClassificationEditor({
     });
   }
 
+  const addingAgency = organizationId === NEW_AGENCY;
+  const agencyMissing = organizationId === "";
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setFormError(null);
     setSaved(false);
+
+    if (agencyMissing) {
+      setFormError("Choose a funding agency for the new country before saving.");
+
+      return;
+    }
+
+    if (addingAgency && newAgencyName.trim() === "") {
+      setFormError("Give the new agency a name, or pick an existing one.");
+
+      return;
+    }
+
     setSubmitting(true);
 
     const result = await saveGrantClassification({
       grantId: grant.id,
       countryId,
-      organizationId,
+      organizationId: addingAgency ? null : organizationId,
+      newOrganizationName: addingAgency ? newAgencyName : "",
+      newOrganizationWebsite: addingAgency ? newAgencyWebsite : "",
       stateId: stateId === "" ? null : stateId,
       categoryIds: [...categoryIds],
       primaryCategoryId,
@@ -98,6 +121,10 @@ export function GrantClassificationEditor({
     }
 
     setSaved(true);
+    // The agency may have just been created; re-reading gives the form the id
+    // the server assigned instead of leaving it on the "add new" sentinel.
+    setNewAgencyName("");
+    setNewAgencyWebsite("");
     router.refresh();
   }
 
@@ -129,6 +156,14 @@ export function GrantClassificationEditor({
         onCategoryToggle={handleCategoryToggle}
         primaryCategoryId={primaryCategoryId}
         onPrimaryCategoryChange={setPrimaryCategoryId}
+        // Moving a grant to a country with no agencies recorded — which is
+        // every country except the United States — is otherwise impossible:
+        // the agency list comes back empty and there is nothing to pick.
+        allowNewAgency
+        newAgencyName={newAgencyName}
+        onNewAgencyNameChange={setNewAgencyName}
+        newAgencyWebsite={newAgencyWebsite}
+        onNewAgencyWebsiteChange={setNewAgencyWebsite}
       />
 
       <div className="flex flex-col gap-2">
@@ -140,10 +175,24 @@ export function GrantClassificationEditor({
         />
       </div>
 
-      <div>
-        <Button type="submit" disabled={submitting || organizationId === ""}>
-          {submitting ? "Saving…" : "Save filing"}
-        </Button>
+      <div className="flex flex-col gap-2">
+        <div>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Saving…" : "Save filing"}
+          </Button>
+        </div>
+        {/*
+          Says why rather than going quiet. A disabled button with no
+          explanation is how a country change silently fails to save: the
+          country select moves, the agency beneath it empties, and the only
+          feedback is a button that no longer responds.
+        */}
+        {agencyMissing && (
+          <p className="text-xs text-muted-foreground">
+            Changing the country cleared the agency, because the previous one belongs to a different
+            country. Pick an agency — or add one — to save.
+          </p>
+        )}
       </div>
     </form>
   );

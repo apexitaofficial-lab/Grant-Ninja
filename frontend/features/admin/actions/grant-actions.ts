@@ -158,11 +158,21 @@ export async function saveGrantClassification(
         ? values.primaryCategoryId
         : (values.categoryIds[0] ?? null);
 
+    // Resolved against the *new* country, so moving a grant to a country with
+    // no agencies is one step rather than a dead end.
+    const organizationId =
+      values.organizationId ??
+      (await grantAdminRepository.findOrCreateOrganization(
+        (values.newOrganizationName ?? "").trim(),
+        values.countryId,
+        values.newOrganizationWebsite ?? null,
+      ));
+
     await grantAdminRepository.setClassification(
       {
         grantId: values.grantId,
         countryId: values.countryId,
-        organizationId: values.organizationId,
+        organizationId,
         stateId: values.stateId ?? null,
         categoryIds: values.categoryIds,
         primaryCategoryId,
