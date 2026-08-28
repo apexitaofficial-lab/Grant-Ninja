@@ -27,8 +27,17 @@ cd "${PYTHON_DIR}"
 # Crawl4AI drives a real browser. A dependency bump can expect a newer
 # Chromium than the one on disk, and the failure looks like every page timing
 # out rather than anything about browsers.
+#
+# The path is pinned rather than left to HOME. Run this script with sudo and an
+# unpinned install lands in /root/.cache, which ProtectHome=true then hides from
+# the service — the worker looks for a browser it cannot see, and the symptom is
+# every fetch quietly degrading to plain HTTP with no error that mentions
+# browsers at all.
 echo "==> Ensuring the browser is current"
-.venv/bin/python -m playwright install --with-deps chromium
+PLAYWRIGHT_BROWSERS_PATH=/srv/grant-ninja/.cache/ms-playwright \
+  .venv/bin/python -m playwright install --with-deps chromium
+# Installed as root when this script is run with sudo, so hand it back.
+chown -R grantninja:grantninja /srv/grant-ninja/.cache/ms-playwright
 
 echo "==> Checking configuration and database access"
 # Fails loudly here, while the old worker is still running, rather than after

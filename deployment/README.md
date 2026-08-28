@@ -146,14 +146,56 @@ Prove it works before installing the service:
 sudo -u grantninja .venv/bin/python -m app.health
 ```
 
+Then create the directories the unit writes to, and install the browser where
+the service user will look for it:
+
+```bash
+sudo mkdir -p /srv/grant-ninja/python/logs /srv/grant-ninja/python/.crawl4ai
+sudo PLAYWRIGHT_BROWSERS_PATH=/srv/grant-ninja/.cache/ms-playwright \
+  /srv/grant-ninja/python/.venv/bin/python -m playwright install --with-deps chromium
+sudo chown -R grantninja:grantninja /srv/grant-ninja
+```
+
+Both steps matter, and each has bitten this deployment once:
+
+- **Every `ReadWritePaths` entry must already exist.** `ProtectSystem=strict`
+  bind-mounts them; it does not create them. A missing one fails the service
+  with `status=226/NAMESPACE` *before* Python starts, so the logs say nothing
+  about the worker at all.
+- **Install the browser as the path says, not as whoever is logged in.** Run
+  with `sudo` and an unpinned install lands in `/root/.cache`, which
+  `ProtectHome=true` then hides from the service. The worker looks for a
+  browser it cannot see, Crawl4AI fails, and the fetcher quietly falls back to
+  plain HTTP — losing JavaScript rendering with no error that mentions
+  browsers.
+
 Then install the worker:
 
 ```bash
 sudo cp /srv/grant-ninja/deployment/grant-ninja-worker.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now grant-ninja-worker
-journalctl -u grant-ninja-worker -f
+systemctl status grant-ninja-worker --no-pager
 ```
+
+Check `status` before moving on. `enable --now` returns silently whether the
+service started or entered a restart loop, so the failure above is invisible
+if you go straight to following the log.
+
+Confirm the browser is actually reachable by the service user:
+
+```bash
+sudo -u grantninja PLAYWRIGHT_BROWSERS_PATH=/srv/grant-ninja/.cache/ms-playwright \
+  /srv/grant-ninja/python/.venv/bin/python -c "from playwright.sync_api import sync_playwright
+import os
+with sync_playwright() as p:
+    path = p.chromium.executable_path
+    print(path, os.path.exists(path))"
+```
+
+It must print a path under `/srv/grant-ninja/.cache/` and `True`. Anything else
+means the crawler will run, and publish, while silently fetching every page
+without JavaScript.
 
 ### Populate the agency list
 
