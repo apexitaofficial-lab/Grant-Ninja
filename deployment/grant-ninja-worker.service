@@ -22,6 +22,12 @@ Documentation=https://github.com/apexitaofficial-lab/Grant-Ninja
 After=network-online.target
 Wants=network-online.target
 
+# If it dies five times in five minutes something is genuinely wrong and
+# restarting faster only fills the disk with logs. These belong in [Unit];
+# systemd ignores StartLimitIntervalSec in [Service] and only says so once.
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
 [Service]
 Type=simple
 User=grantninja
@@ -42,7 +48,12 @@ Environment=PYTHONUNBUFFERED=1
 # the fetcher quietly fell back to plain HTTP, losing JavaScript rendering
 # without ever failing a run. Pointing it at the directory ReadWritePaths
 # already grants keeps the sandbox intact and the engine working.
-Environment=CRAWL4AI_BASE_DIRECTORY=/srv/grant-ninja/python
+# CRAWL4_AI_BASE_DIRECTORY, not CRAWL4AI_BASE_DIRECTORY — the underscore after
+# CRAWL4 is real, and getting it wrong is silent: crawl4ai falls back to
+# Path.home(), tries to makedirs $HOME/.crawl4ai at import, and dies with EROFS
+# under ProtectSystem=strict. The library appends ".crawl4ai" itself, so this
+# names the parent and resolves to the path ReadWritePaths grants below.
+Environment=CRAWL4_AI_BASE_DIRECTORY=/srv/grant-ninja/python
 
 # Chromium lives in the service user's own cache. Stated explicitly rather than
 # left to resolve from HOME, because the browsers were originally installed as
@@ -64,10 +75,10 @@ TimeoutStopSec=300
 
 Restart=always
 RestartSec=15
-# If it dies five times in five minutes something is genuinely wrong and
-# restarting faster only fills the disk with logs.
-StartLimitBurst=5
-StartLimitIntervalSec=300
+# The StartLimit* pair lives in [Unit], not here — systemd logs
+# "Unknown key name 'StartLimitIntervalSec' in section 'Service', ignoring"
+# and then applies no rate limit at all, which is how a crash loop reached a
+# restart counter of 68 unnoticed.
 
 # --- Containment ---------------------------------------------------------
 # The worker reads government websites, so it processes untrusted input all
