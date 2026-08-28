@@ -241,6 +241,33 @@ function applyFundingSourceFilter<T extends FilterableBuilder<T>>(
 }
 
 /**
+ * Prepares a term for `websearch_to_tsquery`.
+ *
+ * Postgres reads a hyphen at the *start of a token* as the NOT operator, so
+ * pasting a grant title silently excludes the words being searched for and
+ * returns nothing at all. Measured against the live data:
+ *
+ *   "TEST - USA Manual Grant"                      0 results
+ *   "TEST USA Manual Grant"                        1 result
+ *   "Small Business Innovation Research - Phase I" 0 results
+ *
+ * Federal notices are full of " - ", and pasting a title is the single most
+ * likely thing a visitor does with this box — so the operator costs far more
+ * than it gives. Nothing in the UI advertises negation either, which makes an
+ * empty result set unexplainable to the person who hit it.
+ *
+ * Only a token-leading hyphen is removed. A hyphen inside a word is part of
+ * the word ("cost-saving") and Postgres already treats it that way, so it is
+ * left alone. Quoted phrases and OR keep working.
+ */
+export function toWebSearchQuery(term: string): string {
+  return term
+    .replace(/(^|\s)-+/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
  * Window state is derived from `closes_at`/`opens_at` at query time rather than
  * stored, so it can never go stale — but it also means each option is a date
  * comparison rather than an equality check.
@@ -317,8 +344,13 @@ export class GrantRepository extends BaseRepository {
       builder = builder.lte("maximum_amount", query.maxFunding);
     }
 
-    if (query.search !== undefined && query.search.trim() !== "") {
-      builder = builder.textSearch("search_vector", query.search.trim(), {
+    // A term that is nothing but punctuation reduces to an empty query. Skipped
+    // rather than sent, because an empty tsquery matches no rows — a search for
+    // "-" would otherwise return an empty directory instead of an unfiltered one.
+    const searchQuery = query.search === undefined ? "" : toWebSearchQuery(query.search);
+
+    if (searchQuery !== "") {
+      builder = builder.textSearch("search_vector", searchQuery, {
         type: "websearch",
         config: "english",
       });
