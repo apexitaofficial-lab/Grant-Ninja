@@ -1,4 +1,5 @@
 import { routes } from "@/config/routes";
+import { siteConfig } from "@/config/site";
 import type { GrantDetail } from "@/features/grants/types/grant";
 import type { FaqItem } from "@/features/shared/repositories/faq-repository";
 import type { SiteIdentity } from "@/features/shared/services/settings-service";
@@ -94,6 +95,50 @@ function buildPostalAddress(address: SiteAddress | null): JsonLdObject | null {
   });
 }
 
+/**
+ * A Google Maps link for an address that is complete enough to find.
+ *
+ * Built from the same fields the PostalAddress uses, so the pin and the printed
+ * address can never disagree. Returns null whenever the address itself is not
+ * emitted — a map link to a partial address points somewhere wrong, which is
+ * worse than no link.
+ */
+function buildMapUrl(address: SiteAddress | null): string | null {
+  if (address === null || address.streetAddress === null || address.addressLocality === null) {
+    return null;
+  }
+
+  const query = [
+    address.streetAddress,
+    address.addressLocality,
+    address.addressRegion,
+    address.postalCode,
+    address.addressCountry,
+  ]
+    .filter((part): part is string => part !== null && part !== "")
+    .join(", ");
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+/**
+ * The organization entity for the whole site.
+ *
+ * Emitted once, from the root layout, and referenced by `@id` everywhere else —
+ * so this is the only definition and the Contact page adds no Organization of
+ * its own. A second block would create a competing entity for the same `@id`,
+ * which is the failure mode the shared `@id` exists to prevent.
+ *
+ * Property set follows the pattern used across the group's sites: identity
+ * (name, url, logo), reachability (email, telephone, address, hasMap),
+ * relationship (parentOrganization), subject matter (knowsAbout) and identity
+ * corroboration (sameAs). Google names contact details and a postal address as
+ * the signals that indicate real-world presence.
+ *
+ * Everything is omitted rather than invented when its value is unknown, which
+ * is why `telephone` and `address` simply disappear until they are entered in
+ * Settings.
+ */
 export function buildOrganizationSchema(
   identity: SiteIdentity,
   sameAs: readonly string[],
@@ -104,14 +149,32 @@ export function buildOrganizationSchema(
     "@type": "Organization",
     "@id": organizationId(identity.url),
     name: identity.name,
+    legalName: identity.legalName,
     url: identity.url,
-    logo: absolute(identity.logoUrl, identity.url),
+    // An ImageObject rather than a bare URL: it states explicitly that this is
+    // an image resource, which is the form Google's own examples use.
+    logo: {
+      "@type": "ImageObject",
+      url: absolute(identity.logoUrl, identity.url),
+    },
     // Google reads `image` for the entity card; the logo is the only image the
     // organization actually has.
     image: absolute(identity.logoUrl, identity.url),
     description: identity.description,
-    sameAs: [...sameAs],
+    email: identity.contactEmail,
+    telephone: identity.contactPhone,
     address: buildPostalAddress(address),
+    hasMap: buildMapUrl(address),
+    parentOrganization: {
+      "@type": "Organization",
+      name: siteConfig.parentOrganization.name,
+      url: siteConfig.parentOrganization.url,
+    },
+    knowsAbout: [...siteConfig.knowsAbout],
+    sameAs: [...sameAs],
+    // Kept alongside the top-level email and telephone rather than instead of
+    // them: the flat properties are what Google's Organization documentation
+    // reads, while ContactPoint carries the intent of the channel.
     contactPoint:
       identity.contactEmail === null && identity.contactPhone === null
         ? null
@@ -121,6 +184,54 @@ export function buildOrganizationSchema(
             email: identity.contactEmail,
             telephone: identity.contactPhone,
           }),
+  });
+}
+
+export function dataCatalogId(siteUrl: string): string {
+  return `${siteUrl}#datacatalog`;
+}
+
+/**
+ * The grants directory as a catalogue of data.
+ *
+ * Grant pages have always emitted `includedInDataCatalog` pointing at "Grant
+ * Ninja grants database" — a catalogue that was named but never actually
+ * defined anywhere. This is that definition, so the reference resolves instead
+ * of dangling.
+ *
+ * `provider` restates the organisation inline, with its address and telephone,
+ * rather than referencing `#organization` by id. That is deliberate and it is
+ * what the sibling site does: an Organization carrying a postal address and a
+ * telephone is what Google's Local Business feature check looks for, and a bare
+ * `@id` reference carries neither. It is not a competing definition of the
+ * site's organisation — it has no `@id`, so it cannot contradict the canonical
+ * one in the root layout.
+ */
+export function buildDataCatalogSchema(
+  identity: SiteIdentity,
+  address: SiteAddress | null = null,
+): JsonLdObject {
+  return compact({
+    "@context": CONTEXT,
+    "@type": "DataCatalog",
+    "@id": dataCatalogId(identity.url),
+    name: `${identity.name} grants database`,
+    description:
+      "Directory of federal, state and international research grants, compiled from " +
+      "official government and agency sources and updated continuously.",
+    url: absolute(routes.grants, identity.url),
+    provider: compact({
+      "@type": "Organization",
+      name: identity.name,
+      url: identity.url,
+      email: identity.contactEmail,
+      telephone: identity.contactPhone,
+      address: buildPostalAddress(address),
+      hasMap: buildMapUrl(address),
+    }),
+    publisher: { "@id": organizationId(identity.url) },
+    isAccessibleForFree: true,
+    inLanguage: "en",
   });
 }
 
@@ -357,10 +468,7 @@ function temporalCoverage(grant: GrantDetail): string | null {
  * published, because a publication date for something unpublished is a
  * fabrication, and dates are the property Google most readily distrusts.
  */
-export function buildGrantArticleSchema(
-  grant: GrantDetail,
-  identity: SiteIdentity,
-): JsonLdObject {
+export function buildGrantArticleSchema(grant: GrantDetail, identity: SiteIdentity): JsonLdObject {
   const url = absolute(routes.grant(grant.slug), identity.url);
   const ids = grantIds(url);
 
@@ -403,10 +511,7 @@ export function buildGrantArticleSchema(
  * `distribution` is deliberately absent. There is no downloadable file, and
  * inventing one is how a Dataset becomes a lie about what is available.
  */
-export function buildGrantDatasetSchema(
-  grant: GrantDetail,
-  identity: SiteIdentity,
-): JsonLdObject {
+export function buildGrantDatasetSchema(grant: GrantDetail, identity: SiteIdentity): JsonLdObject {
   const url = absolute(routes.grant(grant.slug), identity.url);
   const ids = grantIds(url);
 
@@ -422,9 +527,7 @@ export function buildGrantDatasetSchema(
   ].filter((entry): entry is string => entry !== null);
 
   const spatial =
-    grant.state === null
-      ? grant.country.name
-      : `${grant.state.name}, ${grant.country.name}`;
+    grant.state === null ? grant.country.name : `${grant.state.name}, ${grant.country.name}`;
 
   return compact({
     "@context": CONTEXT,
@@ -475,10 +578,7 @@ export function buildGrantDatasetSchema(
  * `breadcrumb` resolve to something, which is what turns four separate scripts
  * into one connected graph.
  */
-export function buildGrantWebPageSchema(
-  grant: GrantDetail,
-  identity: SiteIdentity,
-): JsonLdObject {
+export function buildGrantWebPageSchema(grant: GrantDetail, identity: SiteIdentity): JsonLdObject {
   const url = absolute(routes.grant(grant.slug), identity.url);
   const ids = grantIds(url);
 

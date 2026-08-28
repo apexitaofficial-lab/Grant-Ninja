@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Container } from "@/components/layout/container";
 import { Logo } from "@/components/layout/logo";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { BookACallButton } from "@/components/shared/book-a-call-button";
 import { Button } from "@/components/ui/button";
 import { routes } from "@/config/routes";
 import { mainNav } from "@/config/site";
@@ -35,6 +36,9 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {/* Secondary to "Find Grants": browsing the directory is what most
+              visitors came for, and booking is the step after it. */}
+          <BookACallButton variant="outline" className="hidden sm:inline-flex" />
           <Button asChild className="hidden sm:inline-flex">
             <Link href={routes.grants}>Find Grants</Link>
           </Button>
