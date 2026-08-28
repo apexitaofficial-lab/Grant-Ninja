@@ -196,16 +196,33 @@ export type GrantCreateInput = z.input<typeof grantCreateSchema>;
 export type GrantCreateValues = z.output<typeof grantCreateSchema>;
 
 /** Country, agency, state, categories and funding level on an existing grant. */
-export const grantClassificationSchema = z.object({
-  grantId: z.string().uuid(),
-  countryId: z.string().uuid("Choose a country."),
-  organizationId: z.string().uuid("Choose a funding agency."),
-  stateId: z.string().uuid().nullable().optional(),
-  categoryIds: z.array(z.string().uuid()).default([]),
-  primaryCategoryId: z.string().uuid().nullable().optional(),
-  fundingLevel: z.enum(FUNDING_LEVELS).default("national"),
-  changeReason: z.string().trim().max(300).optional(),
-});
+export const grantClassificationSchema = z
+  .object({
+    grantId: z.string().uuid(),
+    countryId: z.string().uuid("Choose a country."),
+
+    // Same either/or as creation. Moving a grant to a country that has no
+    // agencies recorded is otherwise impossible, and that is every country
+    // except the United States until someone adds the first one.
+    organizationId: z.string().uuid().nullable().optional(),
+    newOrganizationName: z.string().trim().max(200).optional(),
+    newOrganizationWebsite: optionalUrl.optional(),
+
+    stateId: z.string().uuid().nullable().optional(),
+    categoryIds: z.array(z.string().uuid()).default([]),
+    primaryCategoryId: z.string().uuid().nullable().optional(),
+    fundingLevel: z.enum(FUNDING_LEVELS).default("national"),
+    changeReason: z.string().trim().max(300).optional(),
+  })
+  .refine(
+    (values) =>
+      (values.organizationId ?? null) !== null ||
+      (values.newOrganizationName ?? "").trim() !== "",
+    {
+      message: "Choose an existing agency or enter a new one.",
+      path: ["organizationId"],
+    },
+  );
 
 export type GrantClassificationInput = z.input<typeof grantClassificationSchema>;
 export type GrantClassificationValues = z.output<typeof grantClassificationSchema>;

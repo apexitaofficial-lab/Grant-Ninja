@@ -63,6 +63,8 @@ export interface GrantDetail extends GrantListItem {
   readonly publishedAt: string | null;
   readonly lastVerifiedAt: string | null;
   readonly updatedAt: string;
+  /** Audit-trail revision number. Surfaced as the Dataset's `version`. */
+  readonly version: number;
   readonly summary: string | null;
   readonly answerCapsules: readonly GrantAnswerCapsule[];
   readonly faqs: readonly GrantFaq[];

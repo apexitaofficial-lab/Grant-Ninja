@@ -20,6 +20,13 @@ import { clientEnv } from "@/config/env";
 
 const CACHE_TTL_MS = 60_000;
 
+/**
+ * Middleware runs in front of every page and Vercel kills the invocation at 25
+ * seconds, so this call needs a bound of its own. Failing to resolve a redirect
+ * costs one visitor a 404; hanging costs everyone the site.
+ */
+const FETCH_TIMEOUT_MS = 3_000;
+
 interface RedirectRule {
   readonly destination: string;
   readonly statusCode: number;
@@ -41,6 +48,7 @@ async function fetchRedirects(): Promise<ReadonlyMap<string, RedirectRule>> {
       // The TTL above is the cache; Next's own fetch cache would add a second
       // one with different semantics.
       cache: "no-store",
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
 
     if (!response.ok) {

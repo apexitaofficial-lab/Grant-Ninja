@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { routes } from "@/config/routes";
 import { resolveRedirect } from "@/lib/redirects";
-import { updateSession } from "@/lib/supabase/middleware";
+import { hasAuthCookie, updateSession } from "@/lib/supabase/middleware";
 
 /**
  * Session refresh, plus the authentication gate on /admin.
@@ -14,10 +14,21 @@ import { updateSession } from "@/lib/supabase/middleware";
  * put a database round trip in front of the whole site.
  *
  * So: middleware answers "who are you", the layout answers "may you be here".
+ *
+ * Nothing here may block on a dependency without a bound. Middleware runs in
+ * front of every page, so a hang is not a slow page — it is the whole site
+ * returning 504.
  */
 export async function middleware(request: NextRequest) {
-  const { response, userId } = await updateSession(request);
   const { pathname } = request.nextUrl;
+
+  // An anonymous visitor has no session to refresh, so there is nothing to ask
+  // the auth service about. This is the overwhelming majority of traffic —
+  // every reader and every search engine crawler — and skipping the round trip
+  // takes them off the auth service's availability entirely.
+  const { response, userId } = hasAuthCookie(request)
+    ? await updateSession(request)
+    : { response: NextResponse.next({ request }), userId: null };
 
   // Stored redirects run before anything else, and only on public paths.
   // Renaming a slug in the admin panel writes one of these, so without this

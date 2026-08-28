@@ -22,6 +22,8 @@ export interface SiteIdentity {
   readonly name: string;
   readonly url: string;
   readonly logoUrl: string;
+  /** Sharing image, when one is configured. Null means pages emit no image. */
+  readonly ogImageUrl: string | null;
   readonly description: string;
   readonly defaultMetaTitle: string;
   readonly contactEmail: string | null;
@@ -88,6 +90,10 @@ export async function getSiteIdentity(): Promise<SiteIdentity> {
     // must be known before the database is reachable.
     url: clientEnv.NEXT_PUBLIC_SITE_URL,
     logoUrl: asString(settings.get("logo_url"), "/logo-wordmark.png"),
+    // No fallback to the logo: a wordmark is not a representative image for an
+    // article about a grant, and Article markup carrying one is worse than
+    // Article markup carrying none.
+    ogImageUrl: emptyToNull(asString(settings.get("default_og_image_url"), "")),
     description,
     defaultMetaTitle: asString(settings.get("default_meta_title"), name),
     contactEmail: emptyToNull(asString(settings.get("contact_email"), "")),

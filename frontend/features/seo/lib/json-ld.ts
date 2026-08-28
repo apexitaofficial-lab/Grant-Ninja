@@ -310,6 +310,42 @@ function headline(title: string): string {
 }
 
 /**
+ * A reference to the site organization that also carries its type and name.
+ *
+ * Same `@id`, so this is still one node rather than a second organization —
+ * JSON-LD merges nodes sharing an identifier. Repeating the type and name means
+ * a consumer that does not resolve `@id` across separate script blocks still
+ * reads a usable author and publisher, which is what Google's "recommended
+ * field" warnings on Article are actually complaining about.
+ */
+function publisherNode(identity: SiteIdentity): JsonLdObject {
+  return {
+    "@id": organizationId(identity.url),
+    "@type": "Organization",
+    name: identity.name,
+  };
+}
+
+/**
+ * The application window as an ISO 8601 interval.
+ *
+ * `temporalCoverage` is what a Dataset uses to say which period its data
+ * describes, and for a grant that is exactly the window applications are open.
+ * Open-ended windows are expressed with a trailing separator, which the format
+ * allows; a grant with neither date has no coverage to state.
+ */
+function temporalCoverage(grant: GrantDetail): string | null {
+  const from = grant.opensAt?.slice(0, 10) ?? null;
+  const to = grant.closesAt?.slice(0, 10) ?? null;
+
+  if (from === null && to === null) {
+    return null;
+  }
+
+  return `${from ?? ".."}/${to ?? ".."}`;
+}
+
+/**
  * The page as a written work.
  *
  * Defensible because the page *is* editorial output: Grant Ninja compiles the
@@ -338,12 +374,18 @@ export function buildGrantArticleSchema(
     url,
     mainEntityOfPage: { "@id": ids.webpage },
     about: { "@id": ids.grant },
-    author: { "@id": organizationId(identity.url) },
-    publisher: { "@id": organizationId(identity.url) },
+    author: publisherNode(identity),
+    publisher: publisherNode(identity),
     isPartOf: { "@id": webSiteId(identity.url) },
     datePublished: grant.publishedAt,
     dateModified: grant.updatedAt,
     inLanguage: "en",
+    // Google recommends an image. There is no per-grant artwork, so this is the
+    // site's configured sharing image or nothing — a logo standing in for a
+    // photograph of the subject is the kind of filler that makes the rest of
+    // the markup less trustworthy. Setting the OpenGraph image in admin
+    // settings fills this in everywhere at once.
+    image: identity.ogImageUrl === null ? null : absolute(identity.ogImageUrl, identity.url),
     // Categories are the page's real subject terms, not invented keywords.
     keywords: grant.categories.map((category) => category.name),
   });
@@ -394,21 +436,35 @@ export function buildGrantDatasetSchema(
     identifier: grant.slug,
     about: { "@id": ids.grant },
     creator: funderNode(grant, identity.url),
-    publisher: { "@id": organizationId(identity.url) },
+    publisher: publisherNode(identity),
     includedInDataCatalog: {
       "@type": "DataCatalog",
       name: `${identity.name} grants database`,
       url: absolute(routes.grants, identity.url),
     },
     // The record was transcribed from a specific notice. This is the single
-    // most honest thing a Dataset can say about a compiled record.
+    // most honest thing a Dataset can say about a compiled record, and it
+    // doubles as the reference page identifying what this record describes.
     isBasedOn: grant.officialUrl,
+    sameAs: grant.officialUrl,
     spatialCoverage: spatial,
+    // The application window — literally the period this record covers.
+    temporalCoverage: temporalCoverage(grant),
     variableMeasured: measured,
     keywords: grant.categories.map((category) => category.name),
     datePublished: grant.publishedAt,
     dateModified: grant.updatedAt,
+    // True, and worth stating: reading this record costs nothing and needs no
+    // account. Google recommends it and it is one of the few Dataset
+    // properties a grant listing can answer without qualification.
+    isAccessibleForFree: true,
+    // The audit trail's version number for this record, which is what a
+    // Dataset `version` means.
+    version: grant.version,
     inLanguage: "en",
+    // No `distribution` and no `license`. There is no downloadable file, and no
+    // data licence has been agreed — inventing either would misstate what is
+    // actually on offer, which is the one thing Dataset markup must not do.
   });
 }
 

@@ -35,6 +35,17 @@ EnvironmentFile=/srv/grant-ninja/python/.env
 # Unbuffered, or journalctl shows nothing until a buffer happens to flush and
 # the logs appear minutes after the event they describe.
 Environment=PYTHONUNBUFFERED=1
+
+# Crawl4AI writes its cache and database under $HOME/.crawl4ai. The service
+# user's home is /srv/grant-ninja, which ProtectSystem=strict makes read-only,
+# so the browser engine failed to initialise on every page with EROFS — and
+# the fetcher quietly fell back to plain HTTP, losing JavaScript rendering
+# without ever failing a run. Pointing it at the directory ReadWritePaths
+# already grants keeps the sandbox intact and the engine working.
+Environment=CRAWL4AI_BASE_DIRECTORY=/srv/grant-ninja/python
+# Playwright's browsers are installed per-user; naming the path here means the
+# engine finds them regardless of what HOME resolves to under the sandbox.
+Environment=PLAYWRIGHT_BROWSERS_PATH=/srv/grant-ninja/python/.playwright
 ExecStart=/srv/grant-ninja/python/.venv/bin/python -m app.worker
 
 # A crawl in flight holds an open run row. SIGTERM asks the worker to finish
@@ -59,7 +70,7 @@ PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
 # Playwright writes browser profiles and Loguru writes rotating log files.
-ReadWritePaths=/srv/grant-ninja/python/logs /srv/grant-ninja/python/.crawl4ai
+ReadWritePaths=/srv/grant-ninja/python/logs /srv/grant-ninja/python/.crawl4ai /srv/grant-ninja/python/.playwright
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
