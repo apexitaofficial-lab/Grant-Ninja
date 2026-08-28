@@ -114,12 +114,39 @@ export const socialProfileSchema = z.object({
   enabled: z.coerce.boolean(),
 });
 
+/**
+ * Reads the current value for a setting key, following one level of dotted
+ * path into a stored object.
+ *
+ * `contact_address.city` lives inside the `contact_address` object rather than
+ * in a row of its own, so the settings page cannot look it up by key alone.
+ */
+export function resolveSettingValue(stored: ReadonlyMap<string, Json>, key: string): Json {
+  const separator = key.indexOf(".");
+
+  if (separator === -1) {
+    return stored.get(key) ?? null;
+  }
+
+  const parent = stored.get(key.slice(0, separator));
+
+  if (typeof parent !== "object" || parent === null || Array.isArray(parent)) {
+    return null;
+  }
+
+  return (parent as Record<string, Json>)[key.slice(separator + 1)] ?? null;
+}
+
 export function coerceGroup(
   values: Record<string, string>,
 ):
   | { readonly ok: true; readonly map: Map<string, Json> }
   | { readonly ok: false; readonly error: string } {
   const map = new Map<string, Json>();
+  // Dotted keys are collected here and written as one object per parent, so
+  // five inputs become a single `contact_address` row rather than five rows
+  // the rest of the system does not know about.
+  const objects = new Map<string, Record<string, Json>>();
 
   for (const [key, raw] of Object.entries(values)) {
     const field = findField(key);
@@ -136,7 +163,29 @@ export function coerceGroup(
       return { ok: false, error: result.error };
     }
 
-    map.set(key, result.value);
+    const separator = key.indexOf(".");
+
+    if (separator === -1) {
+      map.set(key, result.value);
+      continue;
+    }
+
+    const parentKey = key.slice(0, separator);
+    const childKey = key.slice(separator + 1);
+    const bucket = objects.get(parentKey) ?? {};
+
+    // An empty sub-field is omitted rather than stored as "". `getSiteAddress`
+    // tests for a non-empty string, and a stored empty value would read as a
+    // filled-in field that happens to say nothing.
+    if (result.value !== "") {
+      bucket[childKey] = result.value;
+    }
+
+    objects.set(parentKey, bucket);
+  }
+
+  for (const [parentKey, value] of objects) {
+    map.set(parentKey, value);
   }
 
   return { ok: true, map };

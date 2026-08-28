@@ -4,7 +4,7 @@ import { SettingsGroupForm } from "@/features/admin/components/settings-group-fo
 import { SocialProfilesEditor } from "@/features/admin/components/social-profiles-editor";
 import { SETTING_GROUPS } from "@/features/admin/config/settings-fields";
 import { settingsAdminRepository } from "@/features/admin/repositories/settings-admin-repository";
-import { settingValueToInput } from "@/features/admin/schemas/settings-schema";
+import { resolveSettingValue, settingValueToInput } from "@/features/admin/schemas/settings-schema";
 import { requireAdmin } from "@/features/admin/services/auth-service";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -45,7 +45,9 @@ export default async function AdminSettingsPage() {
             values={Object.fromEntries(
               group.fields.map((field) => [
                 field.key,
-                settingValueToInput(byKey.get(field.key) ?? null),
+                // Resolved rather than looked up: address sub-fields live
+                // inside the `contact_address` object, not in rows of their own.
+                settingValueToInput(resolveSettingValue(byKey, field.key)),
               ]),
             )}
           />

@@ -71,8 +71,44 @@ export const SETTING_GROUPS: readonly SettingGroup[] = [
       "Published on the site and emitted in Organization structured data. Search engines treat a consistent address as an entity signal, so leaving these empty costs more than it looks.",
     minimumRole: "admin",
     fields: [
-      { key: "contact_email", label: "Public email", kind: "email" },
+      {
+        key: "contact_email",
+        label: "Public email",
+        kind: "email",
+        help: "Emitted as Organization contactPoint. Google treats contact details as an indication of real-world presence.",
+      },
       { key: "contact_phone", label: "Public telephone", kind: "tel" },
+
+      /*
+       * Address sub-fields.
+       *
+       * `contact_address` is stored as one jsonb object, not five rows, because
+       * a partial address is meaningless — `getSiteAddress` emits nothing
+       * unless both street and city are present, so the parts are only ever
+       * read together.
+       *
+       * The dotted key is what lets a single object be edited as separate
+       * inputs: `coerceGroup` reassembles `contact_address.*` back into one
+       * object before saving. Without these fields the column was unreachable
+       * from the UI, so `Organization.address` could never be populated by
+       * anyone — the schema builder has always supported it.
+       */
+      {
+        key: "contact_address.line1",
+        label: "Street address",
+        kind: "text",
+        help: "Street and suite. Required before any address is emitted — a lone city or country claims a presence the settings do not establish.",
+      },
+      { key: "contact_address.city", label: "City", kind: "text" },
+      { key: "contact_address.region", label: "State or region", kind: "text" },
+      { key: "contact_address.postal_code", label: "Postal code", kind: "text" },
+      {
+        key: "contact_address.country_code",
+        label: "Country code",
+        kind: "text",
+        help: "Two-letter ISO code, for example US or GB.",
+      },
+
       {
         key: "zendesk_widget_key",
         label: "Zendesk widget key",
