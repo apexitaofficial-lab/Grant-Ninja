@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Logo } from "@/components/layout/logo";
+import { BookACallButton } from "@/components/shared/book-a-call-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { routes } from "@/config/routes";
@@ -53,6 +54,8 @@ export function MobileNav() {
           <Button asChild className="mt-4 w-full">
             <Link href={routes.grants}>Find Grants</Link>
           </Button>
+          {/* Same component as the desktop header, so the two cannot diverge. */}
+          <BookACallButton variant="outline" className="mt-2 w-full" showIcon />
         </nav>
       </SheetContent>
     </Sheet>

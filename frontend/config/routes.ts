@@ -37,6 +37,20 @@ export const routes = {
   contact: "/contact",
   search: "/search",
 
+  /**
+   * Book a Call. A route on this domain rather than a link straight to the
+   * scheduler.
+   *
+   * The indirection is the point: the Google Calendar link can be repointed by
+   * changing one environment variable, and every button, email and printed
+   * reference to `/bookings` keeps working. It also keeps the booking URL on
+   * the Grant Ninja domain, which is what a visitor sees before the redirect
+   * resolves.
+   *
+   * Served by a route handler, not a page — see `app/bookings/route.ts`.
+   */
+  bookings: "/bookings",
+
   // Rule 1 — global and permanent.
   grants: "/grants",
   grant: (slug: string) => `/grants/${slug}`,

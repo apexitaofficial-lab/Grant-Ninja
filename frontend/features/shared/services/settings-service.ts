@@ -3,6 +3,7 @@ import "server-only";
 import { cache } from "react";
 
 import { clientEnv } from "@/config/env";
+import { siteConfig } from "@/config/site";
 import type { SiteAddress } from "@/features/seo/lib/json-ld";
 import type { SameAsProfile } from "@/features/shared/repositories/settings-repository";
 import { settingsRepository } from "@/features/shared/repositories/settings-repository";
@@ -21,6 +22,8 @@ import { logger } from "@/lib/logger";
 export interface SiteIdentity {
   readonly name: string;
   readonly url: string;
+  /** Registered entity name, when one has been recorded. Omitted from schema when null. */
+  readonly legalName: string | null;
   readonly logoUrl: string;
   readonly description: string;
   readonly defaultMetaTitle: string;
@@ -90,8 +93,15 @@ export async function getSiteIdentity(): Promise<SiteIdentity> {
     logoUrl: asString(settings.get("logo_url"), "/logo-wordmark.png"),
     description,
     defaultMetaTitle: asString(settings.get("default_meta_title"), name),
-    contactEmail: emptyToNull(asString(settings.get("contact_email"), "")),
-    contactPhone: emptyToNull(asString(settings.get("contact_phone"), "")),
+    // Falls back to the official address rather than to empty. Settings still
+    // win, so this can be changed without a deploy — but the published contact
+    // address and `Organization.email` are never simply missing while the
+    // setting is waiting to be filled in.
+    contactEmail: emptyToNull(asString(settings.get("contact_email"), siteConfig.contactEmail)),
+    contactPhone: emptyToNull(asString(settings.get("contact_phone"), siteConfig.contactPhone)),
+    // No fallback on purpose: a registered entity name is not something to
+    // guess at, so it stays absent until it is recorded.
+    legalName: emptyToNull(asString(settings.get("legal_name"), "")),
   };
 }
 
@@ -159,12 +169,25 @@ export async function getSameAsUrls(): Promise<readonly string[]> {
  * presence that cannot be checked, which is precisely the kind of claim
  * structured data is penalised for.
  */
+/** The configured office address, as the shape the schema builders expect. */
+function configuredAddress(): SiteAddress {
+  const { contactAddress } = siteConfig;
+
+  return {
+    streetAddress: contactAddress.line1,
+    addressLocality: contactAddress.city,
+    addressRegion: contactAddress.region,
+    postalCode: contactAddress.postalCode,
+    addressCountry: contactAddress.countryCode,
+  };
+}
+
 export async function getSiteAddress(): Promise<SiteAddress | null> {
   const settings = await loadSettings();
   const raw = settings.get("contact_address");
 
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
-    return null;
+    return configuredAddress();
   }
 
   const record = raw as Record<string, unknown>;
@@ -182,7 +205,13 @@ export async function getSiteAddress(): Promise<SiteAddress | null> {
     addressCountry: read("country_code"),
   };
 
-  return address.streetAddress === null || address.addressLocality === null ? null : address;
+  // All or nothing. A settings address missing its street or city falls back to
+  // the configured one whole, rather than being completed from it — splicing
+  // half of one address onto half of another produces a place that does not
+  // exist, which is worse than either on its own.
+  return address.streetAddress === null || address.addressLocality === null
+    ? configuredAddress()
+    : address;
 }
 
 function emptyToNull(value: string): string | null {
