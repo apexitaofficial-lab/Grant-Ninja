@@ -50,7 +50,7 @@ export default async function GrantsPage({ searchParams }: GrantsPageProps) {
   return (
     <>
       <PageHeader
-        title="Research grants"
+        title="Research Grants"
         description="Funding from government agencies and research councils, updated from official sources. Sorted by closing date so the ones you can still apply for come first."
       />
 

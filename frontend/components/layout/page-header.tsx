@@ -20,7 +20,19 @@ export function PageHeader({ title, description, breadcrumb, actions }: PageHead
       {breadcrumb}
 
       <div className="mt-4 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-        <div className="max-w-3xl">
+        {/*
+          `max-w-3xl` ended this block 448px short of the content beneath it —
+          the listing, the search field and the result grid all run the full
+          container — so every inner page opened with a narrow column of text
+          above a wide one, which reads as two layouts stacked rather than one
+          page. Widened to match the hero, which was corrected the same way.
+
+          Not the full container, though: the widest description on any of the
+          eleven pages that use this is 1193px on one line, so removing the cap
+          entirely would set it as a single 157-character line on a large
+          screen. This keeps it to two.
+        */}
+        <div className="max-w-5xl">
           <h1 className="text-3xl font-bold tracking-tight text-balance md:text-4xl">{title}</h1>
           {description && (
             <p className="mt-4 text-base leading-relaxed text-pretty text-muted-foreground">

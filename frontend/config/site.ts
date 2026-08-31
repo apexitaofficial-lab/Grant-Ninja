@@ -93,6 +93,46 @@ export const siteConfig = {
   ],
 } as const;
 
+/**
+ * The one label for every link into the funding-services page.
+ *
+ * There were four, all pointing at `/services`: "See how funding works" on the
+ * grant page and the about page, "How funding works" in the hero, and "See how
+ * it works" in the funding block. Three of them named no subject at all, so
+ * what you would get after clicking depended on the paragraph above the
+ * button — and on a grant page, sitting under the agency's own application
+ * links, "see how it works" reads as though it explains *that grant*.
+ *
+ * Naming grant funding fixes that, and keeping it in one place is what stops a
+ * fifth wording appearing the next time a page is written.
+ *
+ * Title Case, like every other clickable label on the public site. That is a
+ * house style rather than a typographic law — articles, coordinating
+ * conjunctions and short prepositions stay lowercase unless they lead the
+ * phrase, which is why this is "How Grant Funding Works" and the grant page
+ * says "Apply on the Agency Site".
+ *
+ * The ALL-CAPS mono eyebrows ("APPLICATION WINDOW", "WHO CAN APPLY") are
+ * deliberately outside this rule: those are a styling treatment applied in
+ * CSS, so their source text never reaches the screen as written.
+ */
+export const FUNDING_CTA_LABEL = "Learn How Grant Funding Works";
+
+/**
+ * Its counterpart: the label for every link that starts a conversation about
+ * funding, rather than explaining it.
+ *
+ * These two are almost always rendered side by side, so they have to divide
+ * the work between them visibly. "Learn how…" and "Talk to our team" only did
+ * that if you already knew the second one was about funding — it named a team
+ * without saying what for, which on a page carrying several kinds of enquiry
+ * is the reader's problem to solve rather than ours.
+ *
+ * Naming funding in both makes the pair read as one choice with two doors:
+ * read about it, or speak to someone about it.
+ */
+export const FUNDING_CONTACT_CTA_LABEL = "Talk to Our Funding Team";
+
 export const mainNav: readonly NavItem[] = [
   { label: "Browse Grants", href: routes.grants },
   { label: "Countries", href: routes.countries },

@@ -22,7 +22,7 @@ export default async function AgenciesPage() {
   return (
     <>
       <PageHeader
-        title="Grant-making agencies"
+        title="Grant-Making Agencies"
         description="The government departments, research councils and foundations behind the grants in the database. Every grant links back to the agency that issued it."
       />
 

@@ -404,8 +404,13 @@ export function buildGrantSchema(grant: GrantDetail, identity: SiteIdentity): Js
       ? compact({
           "@type": "MonetaryAmount",
           currency: grant.currency,
-          minValue: grant.minimumAmount,
-          maxValue: grant.maximumAmount,
+          // A floor equal to the ceiling is a fixed award, not a range of one.
+          // `value` is the property for that; publishing it as minValue and
+          // maxValue makes an assistant reading the page describe a single
+          // fixed sum as though it were negotiable.
+          ...(grant.minimumAmount !== null && grant.minimumAmount === grant.maximumAmount
+            ? { value: grant.maximumAmount }
+            : { minValue: grant.minimumAmount, maxValue: grant.maximumAmount }),
         })
       : null,
     // Grant Ninja lists the programme; the agency funds it. `provider` is the

@@ -19,7 +19,7 @@ export default async function CategoriesPage() {
   return (
     <>
       <PageHeader
-        title="Grants by category"
+        title="Grants by Category"
         description="Grants are classified by field. A grant can sit in several categories, so a project spanning two disciplines appears under both."
       />
 

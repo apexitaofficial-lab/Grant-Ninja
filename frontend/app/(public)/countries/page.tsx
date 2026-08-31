@@ -19,7 +19,7 @@ export default async function CountriesPage() {
   return (
     <>
       <PageHeader
-        title="Grants by country"
+        title="Grants by Country"
         description="Every country in the database, with the number of published grants behind each. Countries are added as their government sources are brought into the crawler."
       />
 

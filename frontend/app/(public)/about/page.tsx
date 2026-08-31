@@ -9,6 +9,7 @@ import { JsonLd } from "@/components/shared/json-ld";
 import { StatRow } from "@/components/shared/stat-row";
 import { Button } from "@/components/ui/button";
 import { routes } from "@/config/routes";
+import { FUNDING_CTA_LABEL } from "@/config/site";
 import { buildBreadcrumbSchema, buildFaqSchema } from "@/features/seo/lib/json-ld";
 import { getStaticPageFaqs } from "@/features/shared/services/faq-service";
 import { getStatistics } from "@/features/shared/services/reference-service";
@@ -50,7 +51,7 @@ export default async function AboutPage() {
       />
 
       <PageHeader
-        title="Grant funding is public information that is hard to find"
+        title="Grant Funding Is Public Information That Is Hard to Find"
         description="Thousands of research grants are published every year across hundreds of government sites, in formats built for compliance rather than for reading. Grant Ninja collects them into one place and keeps them current."
         breadcrumb={<EntityBreadcrumb trail={[{ label: "About" }]} />}
       />
@@ -129,7 +130,7 @@ export default async function AboutPage() {
                 the money lands.
               </p>
               <Button asChild variant="outline" className="mt-4 w-full">
-                <Link href={routes.services}>See how funding works</Link>
+                <Link href={routes.services}>{FUNDING_CTA_LABEL}</Link>
               </Button>
             </div>
           </aside>

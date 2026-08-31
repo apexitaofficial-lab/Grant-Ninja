@@ -119,7 +119,7 @@ export default async function CountryPage({ params, searchParams }: CountryPageP
       />
 
       <PageHeader
-        title={`Research grants in ${country.name}`}
+        title={`Research Grants in ${country.name}`}
         description={country.description ?? undefined}
         breadcrumb={
           <EntityBreadcrumb

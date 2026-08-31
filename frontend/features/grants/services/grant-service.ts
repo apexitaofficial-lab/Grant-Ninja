@@ -27,10 +27,10 @@ const SORT_VALUES: readonly GrantSort[] = [
 ];
 
 export const SORT_LABELS: Readonly<Record<GrantSort, string>> = {
-  closing_soon: "Closing soonest",
-  newest: "Recently added",
-  funding_high: "Largest funding",
-  recently_updated: "Recently updated",
+  closing_soon: "Closing Soonest",
+  newest: "Recently Added",
+  funding_high: "Largest Funding",
+  recently_updated: "Recently Updated",
 };
 
 /**

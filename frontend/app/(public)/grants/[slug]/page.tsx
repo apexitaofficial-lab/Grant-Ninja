@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { routes } from "@/config/routes";
+import { FUNDING_CTA_LABEL } from "@/config/site";
 import { DeadlineMeter } from "@/features/grants/components/deadline-meter";
 import { GrantCard } from "@/features/grants/components/grant-card";
 import { GrantFactRow } from "@/features/grants/components/grant-fact-row";
@@ -25,6 +26,7 @@ import {
   getRelatedGrants,
 } from "@/features/grants/services/grant-service";
 import { resolveDeadline } from "@/features/grants/utils/deadline";
+import { toEligibilityPoints } from "@/features/grants/utils/eligibility";
 import {
   buildFaqSchema,
   buildGrantArticleSchema,
@@ -77,6 +79,7 @@ export default async function GrantDetailPage({ params }: GrantDetailPageProps) 
   const deadline = resolveDeadline(grant);
   const funding = formatFundingRange(grant, false);
   const category = getPrimaryCategory(grant);
+  const eligibilityPoints = toEligibilityPoints(grant.eligibility);
   const related = await getRelatedGrants(grant);
 
   const identity = await getSiteIdentity();
@@ -168,14 +171,21 @@ export default async function GrantDetailPage({ params }: GrantDetailPageProps) 
               </h2>
               <dl className="divide-y divide-border border-y border-border">
                 <GrantFactRow label="Award" value={funding ?? "Not published"} mono />
+                {/*
+                  A missing date and a missing amount are different absences.
+                  "Not published" reads, against a date, as though we chose not
+                  to print one — when in fact the agency has not set it yet.
+                  Saying so is both truer and more useful: it tells the reader
+                  there is nothing to go and look up.
+                */}
                 <GrantFactRow
                   label="Opens"
-                  value={formatDate(grant.opensAt) ?? "Not published"}
+                  value={formatDate(grant.opensAt) ?? "Date not announced"}
                   mono
                 />
                 <GrantFactRow
                   label="Closes"
-                  value={formatDate(grant.closesAt) ?? "Not published"}
+                  value={formatDate(grant.closesAt) ?? "Date not announced"}
                   mono
                 />
                 <GrantFactRow
@@ -216,7 +226,28 @@ export default async function GrantDetailPage({ params }: GrantDetailPageProps) 
             {grant.eligibility !== null && (
               <section aria-labelledby="eligibility" className="mt-12">
                 <SectionHeading id="eligibility">Who can apply</SectionHeading>
-                <p className="mt-4 leading-relaxed text-pretty">{grant.eligibility}</p>
+                {/*
+                  Broken into points where the notice itself has them, so the
+                  clause that rules a reader in or out can be found without
+                  reading the whole paragraph. The agency's wording is carried
+                  over untouched — see `utils/eligibility.ts` for why nothing
+                  here is ever reworded.
+                */}
+                {eligibilityPoints === null ? (
+                  <p className="mt-4 leading-relaxed text-pretty">{grant.eligibility}</p>
+                ) : (
+                  <ul className="mt-4 flex flex-col gap-3">
+                    {eligibilityPoints.map((point) => (
+                      <li key={point} className="flex gap-3 leading-relaxed text-pretty">
+                        <span
+                          aria-hidden="true"
+                          className="mt-2.5 size-1.5 shrink-0 rounded-full bg-muted-foreground"
+                        />
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </section>
             )}
 
@@ -263,7 +294,7 @@ export default async function GrantDetailPage({ params }: GrantDetailPageProps) 
                 {grant.applicationUrl !== null && (
                   <Button asChild>
                     <a href={grant.applicationUrl} rel="noopener noreferrer" target="_blank">
-                      Apply on the agency site
+                      Apply on the Agency Site
                       <ArrowUpRight aria-hidden="true" />
                     </a>
                   </Button>
@@ -271,7 +302,7 @@ export default async function GrantDetailPage({ params }: GrantDetailPageProps) 
                 {grant.officialUrl !== null && (
                   <Button asChild variant="outline">
                     <a href={grant.officialUrl} rel="noopener noreferrer" target="_blank">
-                      Read the official notice
+                      Read the Official Notice
                       <ArrowUpRight aria-hidden="true" />
                     </a>
                   </Button>
@@ -297,14 +328,26 @@ export default async function GrantDetailPage({ params }: GrantDetailPageProps) 
               </dl>
             </div>
 
+            {/*
+              Everything above this in the sidebar is the agency's: the
+              deadline, the application link, the official notice. This is not
+              — it is Grant Ninja selling its own service, directly underneath
+              them, and an unlabelled panel in that position reads as part of
+              the grant. The eyebrow says whose offer it is before the pitch
+              starts, which is the honest way to place it here at all.
+            */}
             <div className="mt-4 rounded-card border border-border bg-muted/40 p-6">
-              <p className="font-semibold">Need the money before the grant pays out?</p>
+              <p className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+                Grant Ninja service
+              </p>
+              <p className="mt-3 font-semibold">Need the money before the grant pays out?</p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 Grant Ninja advances funding against approved grants and R&amp;D tax credits, so
-                work can start before the first disbursement arrives.
+                work can start before the first disbursement arrives. This is separate from the
+                grant above, and not offered by {grant.organization.name}.
               </p>
               <Button asChild variant="outline" className="mt-4 w-full">
-                <Link href={routes.services}>See how funding works</Link>
+                <Link href={routes.services}>{FUNDING_CTA_LABEL}</Link>
               </Button>
             </div>
           </aside>

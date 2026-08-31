@@ -120,7 +120,7 @@ export default async function ContactPage() {
       />
 
       <PageHeader
-        title="Contact us"
+        title={TITLE}
         description="Ask about a specific grant, or about bringing funding forward on one you have already been awarded. Book a call and speak to a specialist directly."
         breadcrumb={<EntityBreadcrumb trail={[{ label: TITLE }]} />}
       />

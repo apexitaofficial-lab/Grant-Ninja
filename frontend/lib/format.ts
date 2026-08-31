@@ -47,7 +47,15 @@ export function formatFundingRange(
   const { fundingAmount, minimumAmount, maximumAmount } = input;
 
   if (minimumAmount !== null && maximumAmount !== null) {
-    return `${money(minimumAmount)} – ${money(maximumAmount)}`;
+    // A fixed award is not a range. Notices routinely publish an identical
+    // floor and ceiling — grants.gov has separate "Award Floor" and "Award
+    // Ceiling" fields and a single-award programme fills both with the same
+    // figure — which rendered as "$1,519,113 – $1,519,113". Repeating a number
+    // either side of a dash reads as a mistake, and on a card the compact form
+    // made it worse: "$1.5M – $1.5M".
+    return minimumAmount === maximumAmount
+      ? money(maximumAmount)
+      : `${money(minimumAmount)} – ${money(maximumAmount)}`;
   }
 
   if (maximumAmount !== null) {

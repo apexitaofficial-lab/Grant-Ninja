@@ -9,6 +9,7 @@ import { FaqSection } from "@/components/shared/faq-section";
 import { JsonLd } from "@/components/shared/json-ld";
 import { Button } from "@/components/ui/button";
 import { routes } from "@/config/routes";
+import { FUNDING_CONTACT_CTA_LABEL } from "@/config/site";
 import { buildBreadcrumbSchema, buildFaqSchema } from "@/features/seo/lib/json-ld";
 import { getStaticPageFaqs } from "@/features/shared/services/faq-service";
 import { getSiteIdentity } from "@/features/shared/services/settings-service";
@@ -85,12 +86,12 @@ export default async function ServicesPage() {
       />
 
       <PageHeader
-        title="An approved grant is not money in the bank"
+        title="An Approved Grant Is Not Money in the Bank"
         description="Government funding pays late, and usually in stages. Grant Ninja advances against grants and R&D tax credits you have already secured, so the work can start when you planned it."
         breadcrumb={<EntityBreadcrumb trail={[{ label: "Services" }]} />}
         actions={
           <Button asChild size="lg">
-            <Link href={routes.contact}>Talk to our team</Link>
+            <Link href={routes.contact}>{FUNDING_CONTACT_CTA_LABEL}</Link>
           </Button>
         }
       />
@@ -166,12 +167,12 @@ export default async function ServicesPage() {
             <div className="mt-6 flex flex-wrap gap-3">
               <Button asChild>
                 <Link href={routes.contact}>
-                  Talk to our team
+                  {FUNDING_CONTACT_CTA_LABEL}
                   <ArrowRight aria-hidden="true" />
                 </Link>
               </Button>
               <Button asChild variant="outline">
-                <Link href={routes.grants}>Browse grants first</Link>
+                <Link href={routes.grants}>Browse Grants First</Link>
               </Button>
             </div>
           </div>
