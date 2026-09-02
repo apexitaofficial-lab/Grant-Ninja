@@ -14,12 +14,13 @@ interface BookACallButtonProps {
 }
 
 /**
- * The single definition of "Book a Call".
+ * The single definition of "Schedule a Call".
  *
  * Exists as one component rather than three copies of an anchor so the header,
  * the mobile drawer and the Contact page cannot drift apart — the brief asks
  * for the action to behave identically wherever it is pressed, and the only way
- * to guarantee that is to have one place where it is written.
+ * to guarantee that is to have one place where it is written. Renaming it from
+ * "Book a Call" to "Schedule a Call" was one line here because of that.
  *
  * Points at `/bookings` on this domain, which redirects to the booking
  * calendar. Linking to the route rather than the scheduler means the calendar
@@ -38,7 +39,7 @@ export function BookACallButton({
   variant = "default",
   size,
   className,
-  label = "Book a Call",
+  label = "Schedule a Call",
   showIcon = false,
 }: BookACallButtonProps) {
   return (

@@ -26,7 +26,7 @@ export const siteConfig = {
   locale: "en_US",
 
   /**
-   * The "Book a Call" destination — the group's shared booking page, the same
+   * The "Schedule a Call" destination — the group's shared booking page, the same
    * one the sibling site AusGrant links to from its own contact page.
    *
    * It redirects to a Google Calendar appointment schedule. Linking to the

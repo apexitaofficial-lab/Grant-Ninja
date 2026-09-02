@@ -7,6 +7,23 @@
  */
 
 /**
+ * What a key fact says when the agency has not stated it.
+ *
+ * "Not published" was the wrong word, and wrong in a specific way: it reads as
+ * a decision *this site* made — that the figure exists and we chose not to
+ * print it. What actually happened is that the notice does not carry one yet.
+ * "Not announced" puts the absence where it belongs, with the funder, and
+ * tells the reader there is nothing to go and look up.
+ *
+ * Constants rather than literals because the wording appears on the grant
+ * page, the cards, the admin duplicate review — and in the prose on /about
+ * that explains the convention. That last one is why they must not drift: a
+ * page describing a label it no longer matches is worse than either wording.
+ */
+export const NOT_ANNOUNCED = "Not Announced";
+export const DATE_NOT_ANNOUNCED = "Date Not Announced";
+
+/**
  * Compact currency for card figures: $305K, $1.2M, $2B.
  * Grant amounts span five orders of magnitude, and a full-precision figure
  * makes a column of cards impossible to compare at a glance.

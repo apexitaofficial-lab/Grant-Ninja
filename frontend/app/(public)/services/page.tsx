@@ -15,7 +15,7 @@ import { getStaticPageFaqs } from "@/features/shared/services/faq-service";
 import { getSiteIdentity } from "@/features/shared/services/settings-service";
 
 export const metadata: Metadata = {
-  title: "Funding services",
+  title: "Funding Services",
   description:
     "Grant Ninja advances funding against approved government grants and R&D tax credits, so work can start before the money arrives.",
   alternates: { canonical: routes.services },
@@ -32,19 +32,19 @@ export const metadata: Metadata = {
 
 const SERVICES = [
   {
-    name: "Grant advance",
+    name: "Grant Advance",
     problem: "You have been awarded a grant that pays in stages, or in arrears.",
     detail:
       "We advance against the approved award so the project can start on schedule. The grant still pays out to you on the agency's own timetable.",
   },
   {
-    name: "R&D tax credit advance",
+    name: "R&D Tax Credit Advance",
     problem: "Your claim is prepared but the refund is months away.",
     detail:
       "We advance against the expected credit rather than waiting for the tax authority to process it, which turns a year-end refund into working capital now.",
   },
   {
-    name: "Grant discovery",
+    name: "Grant Discovery",
     problem: "You suspect there is funding for your work but cannot find it.",
     detail:
       "The database here is free to search. If you would rather have someone look, we will tell you which programmes actually fit and which are a waste of your time.",
@@ -53,16 +53,16 @@ const SERVICES = [
 
 const STEPS = [
   {
-    title: "Tell us what you have been awarded",
+    title: "Tell Us What You Have Been Awarded",
     detail: "The programme, the amount, and when the agency expects to pay.",
   },
   {
-    title: "We confirm what can be advanced",
+    title: "We Confirm What Can Be Advanced",
     detail:
       "Against the award itself, so the assessment is about the grant, not your balance sheet.",
   },
   {
-    title: "Funds are released",
+    title: "Funds Are Released",
     detail: "You start the work on schedule. The agency pays out as normal.",
   },
 ] as const;
@@ -141,30 +141,43 @@ export default async function ServicesPage() {
         <section aria-labelledby="why" className="mt-16">
           <SectionHeading id="why">Why it is worth doing</SectionHeading>
           <div className="mt-6 grid gap-8 sm:grid-cols-3">
-            <Point title="It is not equity">
+            <Point title="It Is Not Equity">
               An advance against a grant is not an investment round. Nobody takes a share of the
               company for it.
             </Point>
-            <Point title="The award does the work">
+            <Point title="The Award Does the Work">
               The assessment is about the grant you have been given, not about years of trading
               history.
             </Point>
-            <Point title="The timetable stops mattering">
+            <Point title="The Timetable Stops Mattering">
               Hiring and equipment stop waiting on an agency&rsquo;s payment schedule.
             </Point>
           </div>
         </section>
 
         <section aria-labelledby="cta" className="mt-16">
-          <div className="rounded-card border border-border bg-muted/40 p-8 md:p-12">
-            <h2 id="cta" className="text-2xl font-bold tracking-tight text-balance">
-              Already been awarded something?
+          {/*
+            Centred, matching the funding block on the home page.
+
+            Both are the same thing — a closing callout in a bordered card at
+            the foot of a page — and both had the same fault: a full-width
+            heading over a paragraph capped at `max-w-2xl`, so the text stopped
+            short of the border and left all the slack on one side. Centring
+            spends it as equal margins instead, and the two blocks now read as
+            one pattern rather than two takes on it.
+          */}
+          <div className="rounded-card border border-border bg-muted/40 p-8 text-center md:p-12">
+            <h2
+              id="cta"
+              className="mx-auto max-w-3xl text-2xl font-bold tracking-tight text-balance"
+            >
+              Already Been Awarded Something?
             </h2>
-            <p className="mt-3 max-w-2xl leading-relaxed text-muted-foreground">
+            <p className="mx-auto mt-3 max-w-2xl leading-relaxed text-muted-foreground">
               Tell us which programme and when it pays out, and we will tell you what can be brought
               forward.
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Button asChild>
                 <Link href={routes.contact}>
                   {FUNDING_CONTACT_CTA_LABEL}

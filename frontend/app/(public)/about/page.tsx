@@ -118,7 +118,7 @@ export default async function AboutPage() {
                   Published, updated and last verified, on every grant.
                 </Principle>
                 <Principle term="Gaps stay visible">
-                  A missing amount reads &ldquo;Not published&rdquo; rather than being guessed at.
+                  A missing amount reads &ldquo;Not Announced&rdquo; rather than being guessed at.
                 </Principle>
               </dl>
             </section>

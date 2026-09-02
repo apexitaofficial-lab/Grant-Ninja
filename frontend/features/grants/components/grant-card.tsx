@@ -7,7 +7,7 @@ import { DeadlineMeter } from "@/features/grants/components/deadline-meter";
 import { getPrimaryCategory } from "@/features/grants/services/grant-service";
 import type { GrantListItem } from "@/features/grants/types/grant";
 import { resolveDeadline } from "@/features/grants/utils/deadline";
-import { formatFundingRange } from "@/lib/format";
+import { formatFundingRange, NOT_ANNOUNCED } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /**
@@ -98,7 +98,7 @@ export function GrantCard({ grant, className }: GrantCardProps) {
                 funding === null && "text-sm font-normal text-muted-foreground",
               )}
             >
-              {funding ?? "Not published"}
+              {funding ?? NOT_ANNOUNCED}
             </p>
           </div>
 

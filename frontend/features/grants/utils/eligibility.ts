@@ -62,10 +62,25 @@ const INLINE_BULLET = /[●•‣▪]/g;
 const SENTENCE_BREAK = /(?<=[.!?])\s+(?=["'(]?[A-Z0-9])/;
 
 /**
- * Below this, a paragraph is already scannable and bullets only add furniture.
- * A two-line eligibility note does not need to become a list.
+ * The last resort, and only for text that is not made of sentences at all.
+ *
+ * Grants.gov publishes "Eligible Applicants" as a list and delivers it as one
+ * run-on string. Measured across the published set, the worst is 763
+ * characters with fifteen semicolons and not a single full stop — a half page
+ * of prose that is really a list of applicant types:
+ *
+ *   "Nonprofits having a 501(c)(3) status with the IRS, other than
+ *    institutions of higher education; County governments; Native American
+ *    tribal governments (Federally recognized); ..."
+ *
+ * Checked after sentence splitting, never before. A notice that *is* made of
+ * sentences may still use semicolons inside one of them — the CYFAR text lists
+ * four institution types that way inside its first sentence — and splitting
+ * there would strand "1862 Land-grant Colleges and Universities" as a bullet
+ * with no idea what it is a list of.
  */
-const MIN_LENGTH_TO_SPLIT = 180;
+const SEMICOLON_LIST = /\s*;\s*/;
+const MIN_SEMICOLONS_FOR_LIST = 2;
 
 function endsWithAbbreviation(text: string): boolean {
   const trimmed = text.trimEnd();
@@ -151,10 +166,6 @@ export function toEligibilityPoints(text: string | null): readonly string[] | nu
     }
   }
 
-  if (trimmed.length < MIN_LENGTH_TO_SPLIT) {
-    return null;
-  }
-
   const sentences = healAbbreviations(
     trimmed
       .split(SENTENCE_BREAK)
@@ -162,5 +173,34 @@ export function toEligibilityPoints(text: string | null): readonly string[] | nu
       .filter((sentence) => sentence !== ""),
   );
 
-  return sentences.length > 1 ? sentences : null;
+  if (sentences.length > 1) {
+    return sentences;
+  }
+
+  // Not sentences, but semicolons doing a list's job.
+  if ((trimmed.match(/;/g) ?? []).length >= MIN_SEMICOLONS_FOR_LIST) {
+    const items = trimmed
+      .split(SEMICOLON_LIST)
+      .map((item) => item.trim())
+      .filter((item) => item !== "");
+
+    if (items.length > 1) {
+      return items;
+    }
+  }
+
+  /**
+   * Everything else stays a paragraph, and the commonest reason is worth
+   * stating: the remaining notices are comma-delimited applicant lists whose
+   * items *contain* commas. Splitting
+   *
+   *   "Nonprofits having a 501(c)(3) status with the IRS, other than
+   *    institutions of higher education, Special district governments"
+   *
+   * on commas yields a bullet reading "other than institutions of higher
+   * education" — a qualifier promoted to an eligible category, which inverts
+   * an exclusion into an inclusion. That is a false statement about who may
+   * apply, and worse than a paragraph someone has to read twice.
+   */
+  return null;
 }

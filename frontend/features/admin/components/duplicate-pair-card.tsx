@@ -14,7 +14,7 @@ import type {
   DuplicatePair,
   DuplicateSide,
 } from "@/features/admin/repositories/duplicate-admin-repository";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, NOT_ANNOUNCED } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /**
@@ -163,7 +163,7 @@ function SidePanel({
 }) {
   const amount =
     side.maximumAmount === null
-      ? "Not published"
+      ? NOT_ANNOUNCED
       : side.minimumAmount === null
         ? `Up to ${formatCurrency(side.maximumAmount, side.currency)}`
         : `${formatCurrency(side.minimumAmount, side.currency)} – ${formatCurrency(side.maximumAmount, side.currency)}`;

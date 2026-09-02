@@ -36,7 +36,7 @@ import {
   buildGrantWebPageSchema,
 } from "@/features/seo/lib/json-ld";
 import { getSiteIdentity } from "@/features/shared/services/settings-service";
-import { formatDate, formatFundingRange } from "@/lib/format";
+import { DATE_NOT_ANNOUNCED, formatDate, formatFundingRange, NOT_ANNOUNCED } from "@/lib/format";
 
 interface GrantDetailPageProps {
   readonly params: Promise<{ slug: string }>;
@@ -80,6 +80,17 @@ export default async function GrantDetailPage({ params }: GrantDetailPageProps) 
   const funding = formatFundingRange(grant, false);
   const category = getPrimaryCategory(grant);
   const eligibilityPoints = toEligibilityPoints(grant.eligibility);
+
+  /**
+   * What goes under "About this grant": the agency's own description, or the
+   * sentinel that says there isn't one.
+   *
+   * `null` means the section is not needed at all — a grant with no
+   * description but with an AI summary already explains itself further up the
+   * page, so a second "we have nothing" notice would be both wrong and rude.
+   */
+  const aboutBody: string | null =
+    grant.fullDescription ?? (grant.summary === null ? "unavailable" : null);
   const related = await getRelatedGrants(grant);
 
   const identity = await getSiteIdentity();
@@ -170,22 +181,22 @@ export default async function GrantDetailPage({ params }: GrantDetailPageProps) 
                 Key facts
               </h2>
               <dl className="divide-y divide-border border-y border-border">
-                <GrantFactRow label="Award" value={funding ?? "Not published"} mono />
                 {/*
-                  A missing date and a missing amount are different absences.
-                  "Not published" reads, against a date, as though we chose not
-                  to print one — when in fact the agency has not set it yet.
-                  Saying so is both truer and more useful: it tells the reader
-                  there is nothing to go and look up.
+                  Every unstated fact says "not announced", never "not
+                  published" — see `lib/format.ts` for why the distinction
+                  matters. The dates name what is missing as well, because
+                  "Not Announced" alone under "Opens" could be read as the
+                  programme not being announced rather than its date.
                 */}
+                <GrantFactRow label="Award" value={funding ?? NOT_ANNOUNCED} mono />
                 <GrantFactRow
                   label="Opens"
-                  value={formatDate(grant.opensAt) ?? "Date not announced"}
+                  value={formatDate(grant.opensAt) ?? DATE_NOT_ANNOUNCED}
                   mono
                 />
                 <GrantFactRow
                   label="Closes"
-                  value={formatDate(grant.closesAt) ?? "Date not announced"}
+                  value={formatDate(grant.closesAt) ?? DATE_NOT_ANNOUNCED}
                   mono
                 />
                 <GrantFactRow
@@ -251,10 +262,49 @@ export default async function GrantDetailPage({ params }: GrantDetailPageProps) 
               </section>
             )}
 
-            {grant.fullDescription !== null && (
+            {/*
+              The section is rendered even with nothing to put in it, which is
+              the opposite of what an empty state usually calls for.
+
+              A handful of notices carry no description at all. On the three in
+              the current set — all Bureau of International Labor Affairs
+              programmes — grants.gov's Description field holds one line:
+              "Questions regarding this Funding Opportunity Announcement (FOA)
+              may be emailed to OGM_ILAB@dol.gov." The agency put a contact
+              address where the description goes and left the actual programme
+              detail in an attached PDF, so there is nothing to extract and
+              nothing a re-crawl would recover.
+
+              Dropping the section entirely, which is what happened before,
+              left a reader with the money, the deadline and the eligibility
+              rules but no statement of what the grant is *for*, and no clue
+              that more exists elsewhere. Saying so and pointing at the notice
+              is the honest version — and the only version available, since
+              writing a purpose for an $18m federal cooperative agreement out
+              of nothing would be inventing the thing people came to read.
+            */}
+            {aboutBody !== null && (
               <section aria-labelledby="about" className="mt-12">
                 <SectionHeading id="about">About this grant</SectionHeading>
-                <p className="mt-4 leading-relaxed text-pretty">{grant.fullDescription}</p>
+                {aboutBody === "unavailable" ? (
+                  <>
+                    <p className="mt-4 leading-relaxed text-pretty text-muted-foreground">
+                      {grant.organization.name} published this opportunity without a description.
+                      The full announcement — objectives, eligible activities and how awards are
+                      made — is on the agency&rsquo;s own notice.
+                    </p>
+                    {grant.officialUrl !== null && (
+                      <Button asChild variant="outline" className="mt-4">
+                        <a href={grant.officialUrl} rel="noopener noreferrer" target="_blank">
+                          Read the Official Notice
+                          <ArrowUpRight aria-hidden="true" />
+                        </a>
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <p className="mt-4 leading-relaxed text-pretty">{aboutBody}</p>
+                )}
               </section>
             )}
 
