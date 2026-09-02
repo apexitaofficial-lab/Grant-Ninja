@@ -15,57 +15,146 @@ import { getStaticPageFaqs } from "@/features/shared/services/faq-service";
 import { getSiteIdentity } from "@/features/shared/services/settings-service";
 
 export const metadata: Metadata = {
-  title: "Funding Services",
+  // Short in the tab and in search results; the page's own H1 carries the
+  // full line, which is too long to sit in front of "| Grant Ninja".
+  title: "Our Services",
   description:
-    "Grant Ninja advances funding against approved government grants and R&D tax credits, so work can start before the money arrives.",
+    "Grant discovery, proposal writing, R&D tax credit submissions, and advance funding against awards you have already secured.",
   alternates: { canonical: routes.services },
 };
 
 /**
- * The lead-generation page.
+ * The services page.
  *
- * Written around the problem rather than the product: a grant that pays in
- * arrears is a cash-flow problem, and naming that plainly does more than a
- * list of benefits would. No invented figures, rates or client counts — the
- * commercial details are not ours to make up.
+ * Content supplied by the business and used as written. The route is unchanged
+ * on purpose: `/services` is linked from the funding CTA in four places, from
+ * the footer, and from every grant page's service card, and it is in the
+ * sitemap. Publishing this at a new address would leave all of that pointing
+ * at the old page.
+ *
+ * American spellings ("organization", "specialized") are kept rather than
+ * converted to the British forms used elsewhere on the site. The audience and
+ * the terminology are American — "Non-Profit Organizations" and "501(c)(3)"
+ * are US legal terms, and anglicising them would make them wrong rather than
+ * consistent.
  */
 
-const SERVICES = [
-  {
-    name: "Grant Advance",
-    problem: "You have been awarded a grant that pays in stages, or in arrears.",
-    detail:
-      "We advance against the approved award so the project can start on schedule. The grant still pays out to you on the agency's own timetable.",
-  },
-  {
-    name: "R&D Tax Credit Advance",
-    problem: "Your claim is prepared but the refund is months away.",
-    detail:
-      "We advance against the expected credit rather than waiting for the tax authority to process it, which turns a year-end refund into working capital now.",
-  },
-  {
-    name: "Grant Discovery",
-    problem: "You suspect there is funding for your work but cannot find it.",
-    detail:
-      "The database here is free to search. If you would rather have someone look, we will tell you which programmes actually fit and which are a waste of your time.",
-  },
-] as const;
+interface Service {
+  readonly name: string;
+  readonly lead: readonly string[];
+  /** Introduces the list, where the copy has a line before it. */
+  readonly listIntro?: string;
+  readonly points: readonly { readonly term: string; readonly detail: string }[];
+}
 
-const STEPS = [
+const SERVICES: readonly Service[] = [
   {
-    title: "Tell Us What You Have Been Awarded",
-    detail: "The programme, the amount, and when the agency expects to pay.",
+    name: "Grant Discovery & Intelligence",
+    lead: [
+      "Stop manually searching through disparate agency websites. We provide access to the world’s most extensive, real-time database of research and development grants from official government and private sources.",
+    ],
+    points: [
+      {
+        term: "AI-Powered Matching",
+        detail:
+          "We align your organization’s profile and project scope with the highest-probability grant opportunities.",
+      },
+      {
+        term: "Real-Time Opportunity Alerts",
+        detail:
+          "Stay ahead of the curve with instant notifications when new funding is announced in your sector.",
+      },
+      {
+        term: "Comprehensive Database",
+        detail:
+          "Covering healthcare, technology, AI, manufacturing, energy, agriculture, education, and small business (SBIR/STTR).",
+      },
+      {
+        term: "Deadline & Eligibility Tracking",
+        detail:
+          "We verify every grant’s status, publication date, and eligibility requirements directly from the source.",
+      },
+    ],
   },
   {
-    title: "We Confirm What Can Be Advanced",
-    detail:
-      "Against the award itself, so the assessment is about the grant, not your balance sheet.",
+    name: "Comprehensive Grant Proposal Writing",
+    lead: [
+      "You have the vision; we have the narrative expertise to get it funded.",
+      "We handle the entire lifecycle of the grant application—research, narrative development, budget justification, attachments, and formatting. Our expert grant writers know exactly what reviewers and agencies are looking for, translating your project’s impact into a compelling, compliant, and highly competitive proposal.",
+    ],
+    listIntro: "We craft specialized proposals for:",
+    points: [
+      {
+        term: "Profit Organizations",
+        detail:
+          "Startups, SMEs, and enterprise R&D departments seeking non-dilutive commercialization funding.",
+      },
+      {
+        term: "Non-Profit Organizations",
+        detail:
+          "501(c)(3) entities pursuing federal, state, local, or foundation support for operational and program expansion.",
+      },
+      {
+        term: "Educational Institutions",
+        detail:
+          "Schools, universities, and academic researchers requiring STEM, curriculum, and applied research funding.",
+      },
+      {
+        term: "Community Organizations & Individuals",
+        detail:
+          "Grassroots initiatives, community development projects, and individual innovators.",
+      },
+    ],
   },
   {
-    title: "Funds Are Released",
-    detail: "You start the work on schedule. The agency pays out as normal.",
+    name: "Regulatory Submission Management (R&D Tax Credits)",
+    lead: [
+      "Innovation isn’t just funded through grants; it is rewarded through the tax code. However, navigating the bureaucratic maze of government tax incentives requires specialized precision.",
+      "We provide complete regulatory submission management, specifically assisting clients in preparing, documenting, and filing applications for Research and Development (R&D) tax credits with governmental regulatory bodies.",
+    ],
+    points: [
+      {
+        term: "Qualification Analysis",
+        detail:
+          "We identify qualifying R&D expenditures (wages, supplies, contract research) that you may be overlooking.",
+      },
+      {
+        term: "Documentation & Compliance",
+        detail:
+          "We meticulously prepare the technical narratives and financial exhibits required by regulatory bodies to substantiate your claim.",
+      },
+      {
+        term: "Filing & Audit Defense Readiness",
+        detail:
+          "We ensure your application is structurally sound, legally compliant, and seamlessly filed, minimizing risk and maximizing your statutory return.",
+      },
+    ],
   },
-] as const;
+  {
+    name: "Advance Capital & Bridge Financing",
+    lead: [
+      "Both grants and R&D tax credits are often paid retrospectively—meaning you must spend your own capital to fund projects before the government reimburses you.",
+      "We eliminate this cash-flow bottleneck. If you have already secured an award, we finance it.",
+    ],
+    points: [
+      {
+        term: "Grant Advances",
+        detail:
+          "We provide immediate capital against approved, yet-to-be-disbursed government and foundation grants.",
+      },
+      {
+        term: "R&D Tax Credit Financing",
+        detail:
+          "We advance funds against your filed R&D tax credits so your innovation doesn’t stall while you wait for the treasury to cut a check.",
+      },
+      {
+        term: "Seamless Transition",
+        detail:
+          "Move straight from application approval to project execution without waiting months for institutional bureaucracy to release your funds.",
+      },
+    ],
+  },
+];
 
 export default async function ServicesPage() {
   const [identity, faqs] = await Promise.all([getSiteIdentity(), getStaticPageFaqs("service")]);
@@ -77,7 +166,7 @@ export default async function ServicesPage() {
           buildBreadcrumbSchema(
             [
               { name: "Home", path: routes.home },
-              { name: "Services", path: routes.services },
+              { name: "Our Services", path: routes.services },
             ],
             identity.url,
           ),
@@ -86,86 +175,73 @@ export default async function ServicesPage() {
       />
 
       <PageHeader
-        title="An Approved Grant Is Not Money in the Bank"
-        description="Government funding pays late, and usually in stages. Grant Ninja advances against grants and R&D tax credits you have already secured, so the work can start when you planned it."
-        breadcrumb={<EntityBreadcrumb trail={[{ label: "Services" }]} />}
-        actions={
-          <Button asChild size="lg">
-            <Link href={routes.contact}>{FUNDING_CONTACT_CTA_LABEL}</Link>
-          </Button>
-        }
+        title="Our Services: End-to-End Funding &amp; Innovation Support"
+        description="Securing capital for innovation, research, and community impact shouldn&rsquo;t be a fragmented process. From identifying the perfect funding opportunity and crafting a winning proposal to filing complex R&amp;D tax credits and financing your approved awards, we provide a complete ecosystem of funding services."
+        breadcrumb={<EntityBreadcrumb trail={[{ label: "Our Services" }]} />}
       />
 
       <Container className="pb-24">
-        <section aria-labelledby="services">
-          <SectionHeading id="services">What we do</SectionHeading>
-          <div className="mt-6 grid gap-4 lg:grid-cols-3">
-            {SERVICES.map((service) => (
-              <article
-                key={service.name}
-                className="flex flex-col rounded-card border border-border bg-card p-6"
-              >
-                <h3 className="font-semibold tracking-tight">{service.name}</h3>
-                <p className="mt-3 font-mono text-xs leading-relaxed text-muted-foreground">
-                  {service.problem}
-                </p>
-                <p className="mt-3 text-sm leading-relaxed">{service.detail}</p>
-              </article>
-            ))}
-          </div>
-        </section>
+        <p className="max-w-3xl leading-relaxed text-pretty text-muted-foreground">
+          Whether you are a profit-driven enterprise, a non-profit organization, an educational
+          institution, or an individual innovator, we handle the intricacies of capital acquisition
+          so you can focus on execution.
+        </p>
 
-        <section aria-labelledby="how" className="mt-16">
-          <SectionHeading id="how">How it works</SectionHeading>
-          {/*
-            Numbered because this genuinely is a sequence — each step depends
-            on the one before it, and the order is information the reader needs.
-          */}
-          <ol className="mt-6 divide-y divide-border border-y border-border">
-            {STEPS.map((step, index) => (
-              <li key={step.title} className="flex gap-6 py-6">
+        {/*
+          Numbered, as the source copy is. The numbering is not a sequence you
+          work through — these are four separate services — so it is a label
+          rather than an ordered list, set in the mono face the rest of the site
+          uses for figures.
+        */}
+        <div className="mt-16 flex flex-col gap-20">
+          {SERVICES.map((service, index) => (
+            <section key={service.name} aria-labelledby={slugify(service.name)}>
+              <div className="flex items-baseline gap-4 border-b border-border pb-3">
                 <span className="font-mono text-sm text-muted-foreground tabular-nums">
                   {String(index + 1).padStart(2, "0")}
                 </span>
-                <div>
-                  <h3 className="font-semibold tracking-tight">{step.title}</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                    {step.detail}
+                <h2
+                  id={slugify(service.name)}
+                  className="text-xl font-semibold tracking-tight text-balance md:text-2xl"
+                >
+                  {service.name}
+                </h2>
+              </div>
+
+              <div className="mt-4 max-w-3xl">
+                {service.lead.map((paragraph) => (
+                  <p key={paragraph.slice(0, 40)} className="mt-3 leading-relaxed text-pretty">
+                    {paragraph}
                   </p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
+                ))}
 
-        <section aria-labelledby="why" className="mt-16">
-          <SectionHeading id="why">Why it is worth doing</SectionHeading>
-          <div className="mt-6 grid gap-8 sm:grid-cols-3">
-            <Point title="It Is Not Equity">
-              An advance against a grant is not an investment round. Nobody takes a share of the
-              company for it.
-            </Point>
-            <Point title="The Award Does the Work">
-              The assessment is about the grant you have been given, not about years of trading
-              history.
-            </Point>
-            <Point title="The Timetable Stops Mattering">
-              Hiring and equipment stop waiting on an agency&rsquo;s payment schedule.
-            </Point>
-          </div>
-        </section>
+                {service.listIntro !== undefined && (
+                  <p className="mt-5 font-medium">{service.listIntro}</p>
+                )}
 
-        <section aria-labelledby="cta" className="mt-16">
-          {/*
-            Centred, matching the funding block on the home page.
+                <dl className="mt-5 flex flex-col gap-4">
+                  {service.points.map((point) => (
+                    <div key={point.term} className="flex gap-3">
+                      <span
+                        aria-hidden="true"
+                        className="mt-2.5 size-1.5 shrink-0 rounded-full bg-muted-foreground"
+                      />
+                      <div>
+                        <dt className="inline font-semibold">{point.term}:</dt>{" "}
+                        <dd className="inline leading-relaxed text-muted-foreground">
+                          {point.detail}
+                        </dd>
+                      </div>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            </section>
+          ))}
+        </div>
 
-            Both are the same thing — a closing callout in a bordered card at
-            the foot of a page — and both had the same fault: a full-width
-            heading over a paragraph capped at `max-w-2xl`, so the text stopped
-            short of the border and left all the slack on one side. Centring
-            spends it as equal margins instead, and the two blocks now read as
-            one pattern rather than two takes on it.
-          */}
+        {/* Centred to match the closing callout on the home page. */}
+        <section aria-labelledby="cta" className="mt-20">
           <div className="rounded-card border border-border bg-muted/40 p-8 text-center md:p-12">
             <h2
               id="cta"
@@ -197,22 +273,10 @@ export default async function ServicesPage() {
   );
 }
 
-function SectionHeading({ id, children }: { readonly id: string; readonly children: string }) {
-  return (
-    <h2
-      id={id}
-      className="border-b border-border pb-2 font-mono text-xs tracking-widest text-muted-foreground uppercase"
-    >
-      {children}
-    </h2>
-  );
-}
-
-function Point({ title, children }: { readonly title: string; readonly children: string }) {
-  return (
-    <div>
-      <h3 className="font-semibold tracking-tight">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{children}</p>
-    </div>
-  );
+/** Stable heading ids, so `aria-labelledby` resolves without a hand-kept list. */
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }

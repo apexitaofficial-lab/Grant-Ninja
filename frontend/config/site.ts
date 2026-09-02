@@ -137,7 +137,7 @@ export const mainNav: readonly NavItem[] = [
   { label: "Browse Grants", href: routes.grants },
   { label: "Countries", href: routes.countries },
   { label: "Categories", href: routes.categories },
-  { label: "Services", href: routes.services },
+  { label: "Our Services", href: routes.services },
   { label: "About", href: routes.about },
   { label: "Contact Us", href: routes.contact },
 ];
@@ -147,7 +147,7 @@ export const footerNav: readonly FooterSection[] = [
     title: "Company",
     items: [
       { label: "About", href: routes.about },
-      { label: "Services", href: routes.services },
+      { label: "Our Services", href: routes.services },
       { label: "Contact", href: routes.contact },
     ],
   },
