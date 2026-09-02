@@ -7,7 +7,7 @@ import { routes } from "@/config/routes";
 import { listCategories } from "@/features/shared/services/reference-service";
 
 export const metadata: Metadata = {
-  title: "Grants by category",
+  title: "Grants by Category",
   description:
     "Browse research grants by field — healthcare, technology, energy, manufacturing, artificial intelligence and more.",
   alternates: { canonical: routes.categories },

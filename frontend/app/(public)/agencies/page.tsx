@@ -10,7 +10,7 @@ import {
 } from "@/features/shared/services/reference-service";
 
 export const metadata: Metadata = {
-  title: "Grant-making agencies",
+  title: "Grant-Making Agencies",
   description:
     "Government departments, research councils and foundations that issue the grants tracked by Grant Ninja.",
   alternates: { canonical: routes.agencies },

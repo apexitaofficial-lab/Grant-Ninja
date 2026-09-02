@@ -168,14 +168,18 @@ export const footerNav: readonly FooterSection[] = [
       { label: "Cookies", href: routes.cookies },
     ],
   },
-  {
-    title: "AI",
-    items: [
-      { label: "Sitemap", href: "/sitemap.xml" },
-      { label: "llms.txt", href: "/llms.txt" },
-      { label: "robots.txt", href: "/robots.txt" },
-    ],
-  },
+  /*
+   * There was an "AI" column here listing /sitemap.xml, /llms.txt and
+   * /robots.txt. They are addressed to crawlers and assistants, not to the
+   * person reading the footer, and putting them in the navigation asked a
+   * visitor to make sense of three files that mean nothing to them.
+   *
+   * Removing the links costs nothing: none of the three is discovered by being
+   * linked. robots.txt and llms.txt are fetched from fixed paths by
+   * convention, and robots.txt names the sitemap itself. All three remain
+   * served exactly as before — see app/sitemap.ts, app/robots.ts and
+   * app/llms.txt/route.ts.
+   */
 ];
 
 /**

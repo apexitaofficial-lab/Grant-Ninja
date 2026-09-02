@@ -5,7 +5,13 @@ import { Container } from "@/components/layout/container";
 interface PageHeaderProps {
   /** The page's single H1 — MASTER_PROJECT_SPEC.md §73. */
   readonly title: string;
-  readonly description?: string;
+  /**
+   * A string for the ordinary case. `ReactNode` is accepted so a page whose
+   * lede is two distinct statements can set each on its own line — a sentence
+   * that begins halfway along the line above it reads as a continuation of
+   * that thought rather than as the separate point it is.
+   */
+  readonly description?: ReactNode;
   readonly breadcrumb?: ReactNode;
   readonly actions?: ReactNode;
 }
