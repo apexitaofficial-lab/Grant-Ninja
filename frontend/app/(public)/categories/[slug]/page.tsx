@@ -95,7 +95,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       />
 
       <PageHeader
-        title={`${category.name} grants`}
+        title={`${category.name} Grants`}
         description={category.description ?? undefined}
         breadcrumb={
           <EntityBreadcrumb

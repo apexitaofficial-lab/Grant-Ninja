@@ -94,7 +94,7 @@ export default async function StatePage({ params, searchParams }: StatePageProps
       />
 
       <PageHeader
-        title={`Research grants in ${state.name}`}
+        title={`Research Grants in ${state.name}`}
         description={`Funding available to organisations based in ${state.name}. National ${country.name} programmes are listed on the country page.`}
         breadcrumb={
           <EntityBreadcrumb

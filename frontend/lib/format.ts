@@ -7,6 +7,23 @@
  */
 
 /**
+ * What a key fact says when the agency has not stated it.
+ *
+ * "Not published" was the wrong word, and wrong in a specific way: it reads as
+ * a decision *this site* made — that the figure exists and we chose not to
+ * print it. What actually happened is that the notice does not carry one yet.
+ * "Not announced" puts the absence where it belongs, with the funder, and
+ * tells the reader there is nothing to go and look up.
+ *
+ * Constants rather than literals because the wording appears on the grant
+ * page, the cards, the admin duplicate review — and in the prose on /about
+ * that explains the convention. That last one is why they must not drift: a
+ * page describing a label it no longer matches is worse than either wording.
+ */
+export const NOT_ANNOUNCED = "Not Announced";
+export const DATE_NOT_ANNOUNCED = "Date Not Announced";
+
+/**
  * Compact currency for card figures: $305K, $1.2M, $2B.
  * Grant amounts span five orders of magnitude, and a full-precision figure
  * makes a column of cards impossible to compare at a glance.
@@ -47,7 +64,15 @@ export function formatFundingRange(
   const { fundingAmount, minimumAmount, maximumAmount } = input;
 
   if (minimumAmount !== null && maximumAmount !== null) {
-    return `${money(minimumAmount)} – ${money(maximumAmount)}`;
+    // A fixed award is not a range. Notices routinely publish an identical
+    // floor and ceiling — grants.gov has separate "Award Floor" and "Award
+    // Ceiling" fields and a single-award programme fills both with the same
+    // figure — which rendered as "$1,519,113 – $1,519,113". Repeating a number
+    // either side of a dash reads as a mistake, and on a card the compact form
+    // made it worse: "$1.5M – $1.5M".
+    return minimumAmount === maximumAmount
+      ? money(maximumAmount)
+      : `${money(minimumAmount)} – ${money(maximumAmount)}`;
   }
 
   if (maximumAmount !== null) {

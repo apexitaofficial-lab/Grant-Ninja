@@ -86,12 +86,12 @@ export function GrantFilterPanel({
             className="h-auto px-2 py-1 text-xs"
             onClick={() => clearAll([...FILTER_PARAM_KEYS.filter((key) => key !== "sort")])}
           >
-            Clear all
+            Clear All
           </Button>
         )}
       </div>
 
-      <Group label="Application window">
+      <Group label="Application Window">
         <div className="flex flex-col gap-2">
           {WINDOW_ORDER.map((windowKey) => (
             <label key={windowKey} className="flex cursor-pointer items-center gap-2.5 text-sm">
@@ -107,7 +107,7 @@ export function GrantFilterPanel({
         </div>
       </Group>
 
-      <Group label="Funding source">
+      <Group label="Funding Source">
         <div className="flex flex-col gap-2">
           {SOURCE_ORDER.map((source) => (
             <label key={source} className="flex cursor-pointer items-center gap-2.5 text-sm">
@@ -121,11 +121,11 @@ export function GrantFilterPanel({
         </div>
       </Group>
 
-      <Group label="Award ceiling">
+      <Group label="Award Ceiling">
         <div className="flex items-center gap-2">
           <div className="flex-1">
             <Label htmlFor="filter-min" className="sr-only">
-              Minimum award
+              Minimum Award
             </Label>
             <Input
               id="filter-min"
@@ -141,7 +141,7 @@ export function GrantFilterPanel({
           <span className="text-xs text-muted-foreground">to</span>
           <div className="flex-1">
             <Label htmlFor="filter-max" className="sr-only">
-              Maximum award
+              Maximum Award
             </Label>
             <Input
               id="filter-max"

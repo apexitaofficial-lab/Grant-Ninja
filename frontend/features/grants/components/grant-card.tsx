@@ -7,7 +7,7 @@ import { DeadlineMeter } from "@/features/grants/components/deadline-meter";
 import { getPrimaryCategory } from "@/features/grants/services/grant-service";
 import type { GrantListItem } from "@/features/grants/types/grant";
 import { resolveDeadline } from "@/features/grants/utils/deadline";
-import { formatFundingRange } from "@/lib/format";
+import { formatFundingRange, NOT_ANNOUNCED } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /**
@@ -53,7 +53,21 @@ export function GrantCard({ grant, className }: GrantCardProps) {
             )}
           </div>
 
-          <h3 className="mt-2 text-lg leading-snug font-semibold tracking-tight text-balance">
+          {/*
+            `text-pretty`, not `text-balance`.
+
+            Balancing evens the lines out, which suits a short display heading
+            with room around it. In a 622px card column it does the opposite of
+            what is wanted: a title needing 879px was set as two lines of about
+            440px, leaving some 180px empty at the end of *both* — measured
+            across the listing, the widest line used was 419-528px of the 622
+            available.
+
+            Pretty fills each line and only protects the last one from an
+            orphan. Same titles, same line counts (measured: 2/2/2/1/1/3 either
+            way), 568-620px used instead of 419-528.
+          */}
+          <h3 className="mt-2 text-lg leading-snug font-semibold tracking-tight text-pretty">
             {/* Stretched link: the whole card is the target, but only the
                 title lands in the tab order and the accessibility tree. */}
             <Link
@@ -98,7 +112,7 @@ export function GrantCard({ grant, className }: GrantCardProps) {
                 funding === null && "text-sm font-normal text-muted-foreground",
               )}
             >
-              {funding ?? "Not published"}
+              {funding ?? NOT_ANNOUNCED}
             </p>
           </div>
 

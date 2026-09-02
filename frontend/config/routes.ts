@@ -38,7 +38,8 @@ export const routes = {
   search: "/search",
 
   /**
-   * Book a Call. A route on this domain rather than a link straight to the
+   * The booking CTA ("Schedule a Call"). A route on this domain rather than a
+   * link straight to the
    * scheduler.
    *
    * The indirection is the point: the Google Calendar link can be repointed by

@@ -19,7 +19,7 @@ import { getSiteAddress, getSiteIdentity } from "@/features/shared/services/sett
 
 const TITLE = "Contact Us";
 const DESCRIPTION =
-  "Speak to Grant Ninja about finding research grants, or about bringing funding forward on a grant or R&D tax credit you have already been awarded. Book a call or contact us directly.";
+  "Speak to Grant Ninja about finding research grants, or about bringing funding forward on a grant or R&D tax credit you have already been awarded. Schedule a call or contact us directly.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -120,8 +120,8 @@ export default async function ContactPage() {
       />
 
       <PageHeader
-        title="Contact us"
-        description="Ask about a specific grant, or about bringing funding forward on one you have already been awarded. Book a call and speak to a specialist directly."
+        title={TITLE}
+        description="Ask about a specific grant, or about bringing funding forward on one you have already been awarded. Schedule a call and speak to a specialist directly."
         breadcrumb={<EntityBreadcrumb trail={[{ label: TITLE }]} />}
       />
 
@@ -135,7 +135,7 @@ export default async function ContactPage() {
               className="rounded-card border border-border bg-muted/40 p-6 md:p-8"
             >
               <h2 id="book" className="text-xl font-semibold tracking-tight">
-                Book a call with a grant specialist
+                Schedule a Call with a Grant Specialist
               </h2>
               <p className="mt-3 max-w-prose leading-relaxed text-muted-foreground">
                 Pick a time that suits you and we will call to talk through which grants you are
@@ -248,8 +248,6 @@ export default async function ContactPage() {
                   </div>
                 )}
               </dl>
-
-              <BookACallButton variant="outline" className="mt-8 w-full" />
             </section>
           </aside>
         </div>

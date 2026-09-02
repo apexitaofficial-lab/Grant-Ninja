@@ -27,7 +27,7 @@ export function GrantSortSelect({ value, labels, currentQuery }: GrantSortSelect
   return (
     <div className="flex items-center gap-2">
       <label htmlFor="grant-sort" className="text-xs text-muted-foreground">
-        Sort by
+        Sort By
       </label>
       <Select value={value} onValueChange={(next) => setValue("sort", next)}>
         <SelectTrigger id="grant-sort" size="sm" className="w-[190px]" disabled={isPending}>

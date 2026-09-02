@@ -48,7 +48,7 @@ export function GrantFiltersDrawer({
 
       <SheetContent side="left" className="w-[320px] overflow-y-auto">
         <SheetHeader>
-          <SheetTitle className="text-left">Filter grants</SheetTitle>
+          <SheetTitle className="text-left">Filter Grants</SheetTitle>
         </SheetHeader>
 
         <GrantFilterPanel
@@ -61,7 +61,7 @@ export function GrantFiltersDrawer({
 
         <div className="sticky bottom-0 border-t border-border bg-background p-4">
           <Button className="w-full" onClick={() => setOpen(false)}>
-            Show results
+            Show Results
           </Button>
         </div>
       </SheetContent>

@@ -9,6 +9,7 @@ import { JsonLd } from "@/components/shared/json-ld";
 import { StatRow } from "@/components/shared/stat-row";
 import { Button } from "@/components/ui/button";
 import { routes } from "@/config/routes";
+import { FUNDING_CTA_LABEL } from "@/config/site";
 import { buildBreadcrumbSchema, buildFaqSchema } from "@/features/seo/lib/json-ld";
 import { getStaticPageFaqs } from "@/features/shared/services/faq-service";
 import { getStatistics } from "@/features/shared/services/reference-service";
@@ -50,7 +51,7 @@ export default async function AboutPage() {
       />
 
       <PageHeader
-        title="Grant funding is public information that is hard to find"
+        title="Grant Funding Is Public Information That Is Hard to Find"
         description="Thousands of research grants are published every year across hundreds of government sites, in formats built for compliance rather than for reading. Grant Ninja collects them into one place and keeps them current."
         breadcrumb={<EntityBreadcrumb trail={[{ label: "About" }]} />}
       />
@@ -68,29 +69,43 @@ export default async function AboutPage() {
         <div className="mt-16 grid gap-12 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-16">
           <div className="max-w-2xl min-w-0">
             <section aria-labelledby="how-it-works">
-              <SectionHeading id="how-it-works">How the database is built</SectionHeading>
+              <SectionHeading id="how-it-works">How the Database Is Built</SectionHeading>
               <div className="mt-4 flex flex-col gap-4 leading-relaxed">
+                {/*
+                  Written for someone deciding whether to trust the data, not
+                  for someone who knows how it is produced. "Extracted",
+                  "structured record" and "review queue" are the pipeline's own
+                  words — accurate, and describing machinery to a reader who
+                  asked about reliability.
+
+                  "Organised" rather than "organized": the site's prose is
+                  British throughout ("programmes", "organisation",
+                  "penalised"), and one American spelling in the middle of it
+                  reads as a paste from somewhere else.
+                */}
                 <p>
-                  Automated crawlers monitor official agency websites and grant portals. When a page
-                  changes, the new content is extracted, checked, and turned into a structured
-                  record: what the funding is, who can apply, how much is available, and when it
-                  closes.
+                  Automated systems monitor official agency websites and grant portals. When a page
+                  changes, the updated information is collected, checked, and organised into a clear
+                  grant record, including what the funding is for, who can apply, how much is
+                  available, and when applications close.
                 </p>
                 <p>
-                  Records that the system is not confident about do not go live. They go to a review
-                  queue and a person decides. That is slower than publishing everything, and it is
-                  the reason the database is worth reading.
+                  If the system is not confident that the information is accurate, the grant does
+                  not go live immediately. Instead, it is sent for human review before being
+                  published. This may take longer than publishing everything automatically, but it
+                  helps ensure the database provides information you can trust.
                 </p>
                 <p>
-                  Every grant page links back to the agency notice it came from and shows when it
-                  was last checked. If the two ever disagree, the agency is right — and we want to
-                  know about it.
+                  Every grant page links back to the official agency notice it came from and shows
+                  when the information was last checked. If the information on Grant Ninja ever
+                  differs from the agency notice, the agency&rsquo;s information takes priority, and
+                  we want to know about it.
                 </p>
               </div>
             </section>
 
             <section aria-labelledby="what-we-do-not" className="mt-12">
-              <SectionHeading id="what-we-do-not">What this is not</SectionHeading>
+              <SectionHeading id="what-we-do-not">What This Is Not</SectionHeading>
               <div className="mt-4 flex flex-col gap-4 leading-relaxed">
                 <p>
                   Grant Ninja does not write applications and does not decide who gets funded. The
@@ -108,28 +123,29 @@ export default async function AboutPage() {
 
           <aside className="flex flex-col gap-8">
             <section aria-labelledby="principles">
-              <SectionHeading id="principles">How we work</SectionHeading>
+              <SectionHeading id="principles">How We Work</SectionHeading>
               <dl className="mt-4 flex flex-col gap-5 text-sm">
-                <Principle term="Sources are named">
+                <Principle term="Sources Are Named">
                   Every record links to the official notice behind it.
                 </Principle>
-                <Principle term="Dates are shown">
-                  Published, updated and last verified, on every grant.
+                <Principle term="Dates Are Shown">
+                  Published, updated, and last verified dates are shown on every grant.
                 </Principle>
-                <Principle term="Gaps stay visible">
-                  A missing amount reads &ldquo;Not published&rdquo; rather than being guessed at.
+                <Principle term="Gaps Stay Visible">
+                  If an amount is not available, it is shown as &ldquo;Not Announced&rdquo; rather
+                  than being estimated or guessed.
                 </Principle>
               </dl>
             </section>
 
             <div className="rounded-card border border-border bg-muted/40 p-6">
-              <p className="font-semibold">Already secured funding?</p>
+              <p className="font-semibold">Already Secured Funding?</p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                We advance against approved grants and R&amp;D tax credits so work can start before
-                the money lands.
+                We provide funding against approved grants and R&amp;D tax credits, helping work get
+                started before the funding is received.
               </p>
               <Button asChild variant="outline" className="mt-4 w-full">
-                <Link href={routes.services}>See how funding works</Link>
+                <Link href={routes.services}>{FUNDING_CTA_LABEL}</Link>
               </Button>
             </div>
           </aside>

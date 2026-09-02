@@ -10,7 +10,7 @@ import {
 } from "@/features/shared/services/reference-service";
 
 export const metadata: Metadata = {
-  title: "Grant-making agencies",
+  title: "Grant-Making Agencies",
   description:
     "Government departments, research councils and foundations that issue the grants tracked by Grant Ninja.",
   alternates: { canonical: routes.agencies },
@@ -22,7 +22,7 @@ export default async function AgenciesPage() {
   return (
     <>
       <PageHeader
-        title="Grant-making agencies"
+        title="Grant-Making Agencies"
         description="The government departments, research councils and foundations behind the grants in the database. Every grant links back to the agency that issued it."
       />
 

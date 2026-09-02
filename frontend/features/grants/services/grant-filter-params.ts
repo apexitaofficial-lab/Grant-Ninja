@@ -28,14 +28,14 @@ const WINDOWS: readonly GrantWindowFilter[] = ["open", "closing_soon", "upcoming
 
 export const FUNDING_SOURCE_LABELS: Readonly<Record<GrantFundingSource, string>> = {
   federal: "Federal",
-  state: "State or local",
-  private: "Private or foundation",
+  state: "State or Local",
+  private: "Private or Foundation",
 };
 
 export const WINDOW_LABELS: Readonly<Record<GrantWindowFilter, string>> = {
-  open: "Accepting applications",
-  closing_soon: "Closing within 14 days",
-  upcoming: "Not yet open",
+  open: "Accepting Applications",
+  closing_soon: "Closing Within 14 Days",
+  upcoming: "Not Yet Open",
   closed: "Closed",
 };
 

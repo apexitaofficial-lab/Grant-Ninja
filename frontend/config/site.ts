@@ -26,7 +26,7 @@ export const siteConfig = {
   locale: "en_US",
 
   /**
-   * The "Book a Call" destination — the group's shared booking page, the same
+   * The "Schedule a Call" destination — the group's shared booking page, the same
    * one the sibling site AusGrant links to from its own contact page.
    *
    * It redirects to a Google Calendar appointment schedule. Linking to the
@@ -93,6 +93,46 @@ export const siteConfig = {
   ],
 } as const;
 
+/**
+ * The one label for every link into the funding-services page.
+ *
+ * There were four, all pointing at `/services`: "See how funding works" on the
+ * grant page and the about page, "How funding works" in the hero, and "See how
+ * it works" in the funding block. Three of them named no subject at all, so
+ * what you would get after clicking depended on the paragraph above the
+ * button — and on a grant page, sitting under the agency's own application
+ * links, "see how it works" reads as though it explains *that grant*.
+ *
+ * Naming grant funding fixes that, and keeping it in one place is what stops a
+ * fifth wording appearing the next time a page is written.
+ *
+ * Title Case, like every other clickable label on the public site. That is a
+ * house style rather than a typographic law — articles, coordinating
+ * conjunctions and short prepositions stay lowercase unless they lead the
+ * phrase, which is why this is "How Grant Funding Works" and the grant page
+ * says "Apply on the Agency Site".
+ *
+ * The ALL-CAPS mono eyebrows ("APPLICATION WINDOW", "WHO CAN APPLY") are
+ * deliberately outside this rule: those are a styling treatment applied in
+ * CSS, so their source text never reaches the screen as written.
+ */
+export const FUNDING_CTA_LABEL = "Learn How Grant Funding Works";
+
+/**
+ * Its counterpart: the label for every link that starts a conversation about
+ * funding, rather than explaining it.
+ *
+ * These two are almost always rendered side by side, so they have to divide
+ * the work between them visibly. "Learn how…" and "Talk to our team" only did
+ * that if you already knew the second one was about funding — it named a team
+ * without saying what for, which on a page carrying several kinds of enquiry
+ * is the reader's problem to solve rather than ours.
+ *
+ * Naming funding in both makes the pair read as one choice with two doors:
+ * read about it, or speak to someone about it.
+ */
+export const FUNDING_CONTACT_CTA_LABEL = "Talk to Our Funding Team";
+
 export const mainNav: readonly NavItem[] = [
   { label: "Browse Grants", href: routes.grants },
   { label: "Countries", href: routes.countries },
@@ -128,14 +168,18 @@ export const footerNav: readonly FooterSection[] = [
       { label: "Cookies", href: routes.cookies },
     ],
   },
-  {
-    title: "AI",
-    items: [
-      { label: "Sitemap", href: "/sitemap.xml" },
-      { label: "llms.txt", href: "/llms.txt" },
-      { label: "robots.txt", href: "/robots.txt" },
-    ],
-  },
+  /*
+   * There was an "AI" column here listing /sitemap.xml, /llms.txt and
+   * /robots.txt. They are addressed to crawlers and assistants, not to the
+   * person reading the footer, and putting them in the navigation asked a
+   * visitor to make sense of three files that mean nothing to them.
+   *
+   * Removing the links costs nothing: none of the three is discovered by being
+   * linked. robots.txt and llms.txt are fetched from fixed paths by
+   * convention, and robots.txt names the sitemap itself. All three remain
+   * served exactly as before — see app/sitemap.ts, app/robots.ts and
+   * app/llms.txt/route.ts.
+   */
 ];
 
 /**

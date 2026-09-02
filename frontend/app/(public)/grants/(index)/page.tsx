@@ -16,7 +16,7 @@ import { listGrants, parsePagination, parseSort } from "@/features/grants/servic
 import { listCategories } from "@/features/shared/services/reference-service";
 
 export const metadata: Metadata = {
-  title: "Browse research grants",
+  title: "Browse Research Grants",
   description:
     "Every research grant in the Grant Ninja database, with funding amounts, eligibility and closing dates from official government sources.",
   alternates: { canonical: routes.grants },
@@ -50,7 +50,7 @@ export default async function GrantsPage({ searchParams }: GrantsPageProps) {
   return (
     <>
       <PageHeader
-        title="Research grants"
+        title="Research Grants"
         description="Funding from government agencies and research councils, updated from official sources. Sorted by closing date so the ones you can still apply for come first."
       />
 

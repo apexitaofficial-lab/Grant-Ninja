@@ -76,14 +76,14 @@ export function GrantResultList({
                   sort order that filtered everything out. */}
               {hidesClosedGrants(sort) && (
                 <Button asChild>
-                  <Link href={`${basePath}?sort=newest`}>Include closed grants</Link>
+                  <Link href={`${basePath}?sort=newest`}>Include Closed Grants</Link>
                 </Button>
               )}
               <Button asChild variant="outline">
-                <Link href={routes.categories}>Browse categories</Link>
+                <Link href={routes.categories}>Browse Categories</Link>
               </Button>
               <Button asChild variant="outline">
-                <Link href={routes.contact}>Contact us</Link>
+                <Link href={routes.contact}>Contact Us</Link>
               </Button>
             </>
           }
